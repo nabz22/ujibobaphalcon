@@ -1,0 +1,25 @@
+<div class="row">
+    <div class="col-md-6 mx-auto">
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Edit Catatan</h5>
+
+                <form method="post" action="/notes/update/<?= $note->id ?>">
+                    <div class="mb-3">
+                        <input type="text" name="judul" class="form-control"
+                               value="<?= $note->judul ?>" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <textarea name="isi" class="form-control" rows="4" required><?= $note->isi ?></textarea>
+                    </div>
+
+                    <button class="btn btn-success">Update</button>
+                    <a href="/notes" class="btn btn-secondary">Batal</a>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,42 @@
+<div class="row">
+    <div class="col-md-6 mx-auto">
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Tambah Catatan</h5>
+
+                <form method="post" action="/notes/create">
+                    <div class="mb-3">
+                        <input type="text" name="judul" class="form-control" placeholder="Judul" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <textarea name="isi" class="form-control" rows="3" placeholder="Isi catatan" required></textarea>
+                    </div>
+
+                    <button class="btn btn-primary w-100">Simpan</button>
+                </form>
+            </div>
+        </div>
+
+        <?php foreach ($notes as $note): ?>
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><?= $note->judul ?></h5>
+                    <p class="card-text"><?= nl2br($note->isi) ?></p>
+                    <small class="text-muted"><?= $note->tanggal ?></small>
+
+                    <div class="mt-3">
+                        <a href="/notes/edit/<?= $note->id ?>" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="/notes/delete/<?= $note->id ?>"
+                           class="btn btn-sm btn-danger"
+                           onclick="return confirm('Hapus catatan?')">
+                           Hapus
+                        </a>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+
+    </div>
+</div>
