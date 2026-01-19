@@ -11,7 +11,7 @@ $di = new FactoryDefault();
  */
 $di->setShared('db', function () {
     return new \Phalcon\Db\Adapter\Pdo\Mysql([
-        'host'     => 'ujicoba_db', // ⬅️ PENTING
+        'host'     => 'db',               // WAJIB 'db'
         'username' => 'root',
         'password' => 'root',
         'dbname'   => 'catatanharian',
@@ -26,6 +26,9 @@ $di->setShared('db', function () {
 $di->set('view', function () {
     $view = new View();
     $view->setViewsDir('../app/views/');
+    $view->setLayoutsDir('layouts/');
+$view->setLayout('main');
+
     return $view;
 });
 

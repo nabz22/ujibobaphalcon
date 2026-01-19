@@ -26,15 +26,18 @@ class NotesController extends Controller
         }
 
         $note = new Notes();
-        $note->judul   = $this->request->getPost('judul');
-        $note->isi     = $this->request->getPost('isi');
+        $note->judul   = $this->request->getPost('judul', 'string');
+        $note->isi     = $this->request->getPost('isi', 'string');
         $note->tanggal = date('Y-m-d');
 
-        if ($note->save()) {
-            return $this->response->redirect('/notes');
+        if (!$note->save()) {
+            echo "<pre>";
+            foreach ($note->getMessages() as $message) {
+                echo $message . PHP_EOL;
+            }
+            exit;
         }
 
-        // fallback jika gagal
         return $this->response->redirect('/notes');
     }
 
@@ -81,11 +84,15 @@ class NotesController extends Controller
             return $this->response->redirect('/notes');
         }
 
-        $note->judul = $this->request->getPost('judul');
-        $note->isi   = $this->request->getPost('isi');
+        $note->judul = $this->request->getPost('judul', 'string');
+        $note->isi   = $this->request->getPost('isi', 'string');
 
-        if ($note->save()) {
-            return $this->response->redirect('/notes');
+        if (!$note->save()) {
+            echo "<pre>";
+            foreach ($note->getMessages() as $message) {
+                echo $message . PHP_EOL;
+            }
+            exit;
         }
 
         return $this->response->redirect('/notes');

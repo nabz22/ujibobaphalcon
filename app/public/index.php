@@ -24,11 +24,81 @@ $loader->register();
 $di = new FactoryDefault();
 
 /**
+ * Router
+ * Definisikan route seperti di aplikasi utama
+ */
+$router = $di->getRouter();
+
+// Halaman landing "/"
+$router->addGet(
+    '/',
+    [
+        'controller' => 'index',
+        'action'     => 'index',
+    ]
+);
+
+// Halaman catatan (CRUD)
+$router->addGet(
+    '/notes',
+    [
+        'controller' => 'notes',
+        'action'     => 'index',
+    ]
+);
+
+// Simpan catatan baru
+$router->addPost(
+    '/notes/create',
+    [
+        'controller' => 'notes',
+        'action'     => 'create',
+    ]
+);
+
+// Edit catatan
+$router->addGet(
+    '/notes/edit/{id}',
+    [
+        'controller' => 'notes',
+        'action'     => 'edit',
+    ]
+);
+
+// Update catatan
+$router->addPost(
+    '/notes/update/{id}',
+    [
+        'controller' => 'notes',
+        'action'     => 'update',
+    ]
+);
+
+// Hapus catatan
+$router->addGet(
+    '/notes/delete/{id}',
+    [
+        'controller' => 'notes',
+        'action'     => 'delete',
+    ]
+);
+
+// Logout -> kembali ke halaman utama
+$router->addGet(
+    '/logout',
+    [
+        'controller' => 'index',
+        'action'     => 'logout',
+    ]
+);
+
+/**
  * Database
  */
 $di->setShared('db', function () {
     return new \Phalcon\Db\Adapter\Pdo\Mysql([
-        'host'     => 'ujicoba_db', // ⬅️ PENTING
+        // Host harus pakai NAMA SERVICE di docker-compose, yaitu "db"
+        'host'     => 'db',
         'username' => 'root',
         'password' => 'root',
         'dbname'   => 'catatanharian',

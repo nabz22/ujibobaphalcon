@@ -11,6 +11,6 @@ class Notes extends Model
 
     public function initialize()
     {
-        $this->setSource('notes');
+        $this->setSource('notes'); // GANTI JIKA NAMA TABEL BEDA
     }
 }
