@@ -40,3 +40,34 @@ services:
       MYSQL_ROOT_PASSWORD: root
     depends_on:
       - db
+  odoo_db:
+    image: postgres:15
+    container_name: ujicoba_odoo_db
+    environment:
+      POSTGRES_PASSWORD: odoo
+      POSTGRES_USER: odoo
+      POSTGRES_DB: odoo
+    volumes:
+      - odoo_db_data:/var/lib/postgresql/data
+
+  odoo:
+    image: odoo:17
+    container_name: ujicoba_odoo
+    ports:
+      - "8077:8069"
+    environment:
+      HOST: odoo_db
+      USER: odoo
+      PASSWORD: odoo
+      DB_PORT: 5432
+    volumes:
+      - odoo_addons:/mnt/extra-addons
+      - odoo_data:/var/lib/odoo
+    depends_on:
+      - odoo_db
+    command: odoo -d odoo -i base --without-demo=all
+
+volumes:
+  odoo_db_data:
+  odoo_addons:
+  odoo_data:

@@ -76,16 +76,6 @@ $router->addGet('/api/notes', [
     'action'     => 'notes',
 ]);
 
-$router->addGet('/api/odoo-notes', [
-    'controller' => 'api',
-    'action'     => 'odooNotes',
-]);
-
-$router->addPost('/api/sync-to-odoo', [
-    'controller' => 'api',
-    'action'     => 'syncToOdoo',
-]);
-
 $router->addGet('/api/health', [
     'controller' => 'api',
     'action'     => 'health',
