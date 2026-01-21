@@ -8,6 +8,8 @@ class OdooService
     private $odooPassword;
     private $uid;
     private $models;
+    private $connected = false;
+    private $errorMessage = '';
 
     public function __construct($config = [])
     {
@@ -16,8 +18,32 @@ class OdooService
         $this->odooUsername = $config['username'] ?? 'admin';
         $this->odooPassword = $config['password'] ?? 'admin';
         
-        // Authenticate with Odoo
-        $this->authenticate();
+        // Try to authenticate with Odoo (don't fail if offline)
+        try {
+            $this->authenticate();
+            $this->connected = true;
+        } catch (Exception $e) {
+            $this->connected = false;
+            $this->errorMessage = $e->getMessage();
+            // Log tapi jangan throw exception
+            error_log("Odoo Connection Warning: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Check if Odoo is connected
+     */
+    public function isConnected()
+    {
+        return $this->connected;
+    }
+
+    /**
+     * Get last error message
+     */
+    public function getError()
+    {
+        return $this->errorMessage;
     }
 
     /**
@@ -122,6 +148,14 @@ class OdooService
      */
     public function read($model, $fields = [], $domain = [], $limit = 10)
     {
+        if (!$this->connected) {
+            return [
+                'error' => 'Odoo service is not available',
+                'message' => $this->errorMessage,
+                'data' => []
+            ];
+        }
+
         try {
             $rpcParams = [
                 $model,
@@ -157,6 +191,10 @@ class OdooService
      */
     public function create($model, $values)
     {
+        if (!$this->connected) {
+            return ['error' => 'Odoo service is not available', 'message' => $this->errorMessage];
+        }
+
         try {
             $rpcParams = [
                 $model,
@@ -176,6 +214,10 @@ class OdooService
      */
     public function write($model, $ids, $values)
     {
+        if (!$this->connected) {
+            return ['error' => 'Odoo service is not available', 'message' => $this->errorMessage];
+        }
+
         try {
             $rpcParams = [
                 $model,
@@ -195,6 +237,10 @@ class OdooService
      */
     public function delete($model, $ids)
     {
+        if (!$this->connected) {
+            return ['error' => 'Odoo service is not available', 'message' => $this->errorMessage];
+        }
+
         try {
             $rpcParams = [
                 $model,

@@ -43,16 +43,19 @@ class OdooController extends Controller
             ]
         ];
 
-        if ($this->config['enabled'] && $this->odooService) {
-            try {
-                // Try to get current user info
+        if ($this->config['enabled']) {
+            if ($this->odooService && $this->odooService->isConnected()) {
                 $health['services']['odoo'] = 'connected';
-            } catch (Exception $e) {
-                $health['services']['odoo'] = 'error: ' . $e->getMessage();
+            } else if ($this->odooService) {
+                $health['services']['odoo'] = 'error: ' . $this->odooService->getError();
+                $health['status'] = 'degraded';
+            } else {
+                $health['services']['odoo'] = 'service not initialized';
                 $health['status'] = 'degraded';
             }
         } else {
-            $health['services']['odoo'] = 'disabled';
+            $health['services']['odoo'] = 'disabled (not configured)';
+            $health['note'] = 'Odoo integration is disabled. Uncomment Odoo services in docker-compose.yml to enable.';
         }
 
         return $this->response
