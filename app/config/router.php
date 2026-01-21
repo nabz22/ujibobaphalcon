@@ -70,7 +70,7 @@ $router->addGet(
 );
 
 
-// ROUTE API
+// ROUTE API - NOTES & GENERAL
 $router->addGet('/api/notes', [
     'controller' => 'api',
     'action'     => 'notes',
@@ -89,6 +89,37 @@ $router->addPost('/api/sync-to-odoo', [
 $router->addGet('/api/health', [
     'controller' => 'api',
     'action'     => 'health',
+]);
+
+// ROUTE API - ODOO INTEGRATION
+$router->addGet('/api/odoo/health', [
+    'controller' => 'odoo',
+    'action'     => 'health',
+]);
+
+$router->addGet('/api/odoo/read', [
+    'controller' => 'odoo',
+    'action'     => 'read',
+]);
+
+$router->addPost('/api/odoo/create', [
+    'controller' => 'odoo',
+    'action'     => 'create',
+]);
+
+$router->addPost('/api/odoo/sync-notes', [
+    'controller' => 'odoo',
+    'action'     => 'syncNotes',
+]);
+
+$router->addGet('/api/odoo/sync-status', [
+    'controller' => 'odoo',
+    'action'     => 'syncStatus',
+]);
+
+$router->addGet('/api/odoo/failed-syncs', [
+    'controller' => 'odoo',
+    'action'     => 'failedSyncs',
 ]);
 
 // Kembalikan instance router ke DI
