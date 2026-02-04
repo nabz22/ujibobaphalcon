@@ -393,7 +393,9 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Customer *</label>
-                                <input type="text" class="form-control" name="customer_name" placeholder="PT Maju" required>
+                                <select class="form-control" name="customer_id" id="salesCustomer" required>
+                                    <option value="">Pilih Customer...</option>
+                                </select>
                             </div>
                         </div>
                         <div class="row mb-3">
@@ -436,7 +438,9 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Supplier *</label>
-                                <input type="text" class="form-control" name="supplier_name" placeholder="PT Supplier" required>
+                                <select class="form-control" name="supplier_id" id="purchaseSupplier" required>
+                                    <option value="">Pilih Supplier...</option>
+                                </select>
                             </div>
                         </div>
                         <div class="row mb-3">
@@ -516,6 +520,7 @@
                     <h3>👥 Customers dari Odoo</h3>
                     <div style="margin-bottom: 10px;">
                         <button class="btn btn-primary btn-action" onclick="loadCustomersFromOdoo()">🔄 Sync Customers dari Odoo</button>
+                        <button class="btn btn-success btn-action" onclick="showCustomerModal()">➕ Tambah Customer</button>
                     </div>
                     <input type="text" class="form-control" id="customerSearch" placeholder="🔍 Cari customer..." onkeyup="filterCustomers()" style="margin-bottom: 15px;">
                 </div>
@@ -613,6 +618,8 @@
             loadSalesOrders();
             loadPurchaseOrders();
             loadInvoices();
+            loadCustomersForDropdown();
+            loadVendorsForDropdown();
             setInterval(() => {
                 loadProducts();
                 loadSalesOrders();
@@ -620,6 +627,64 @@
                 loadInvoices();
             }, 10000);
         });
+
+        // Load Customers for Sales dropdown
+        async function loadCustomersForDropdown() {
+            try {
+                const response = await fetch('/api/odoo/customers');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    customersData = result.data || [];
+                    populateCustomerDropdown();
+                }
+            } catch (error) {
+                console.error('Error loading customers for dropdown:', error);
+            }
+        }
+
+        // Populate Customer dropdown in Sales form
+        function populateCustomerDropdown() {
+            const select = document.getElementById('salesCustomer');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">Pilih Customer...</option>';
+            customersData.forEach(customer => {
+                const option = document.createElement('option');
+                option.value = customer.id;
+                option.textContent = customer.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Load Vendors for Purchase dropdown
+        async function loadVendorsForDropdown() {
+            try {
+                const response = await fetch('/api/odoo/vendors');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    vendorsData = result.data || [];
+                    populateVendorDropdown();
+                }
+            } catch (error) {
+                console.error('Error loading vendors for dropdown:', error);
+            }
+        }
+
+        // Populate Vendor/Supplier dropdown in Purchase form
+        function populateVendorDropdown() {
+            const select = document.getElementById('purchaseSupplier');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">Pilih Supplier...</option>';
+            vendorsData.forEach(vendor => {
+                const option = document.createElement('option');
+                option.value = vendor.id;
+                option.textContent = vendor.name;
+                select.appendChild(option);
+            });
+        }
 
         // NOTES FUNCTIONS
         async function addNote(e) {
@@ -987,10 +1052,13 @@
             e.preventDefault();
             const form = e.target;
             const product_id = document.getElementById('salesProduct').value;
+            const customerSelect = document.getElementById('salesCustomer');
+            const customerName = customerSelect.options[customerSelect.selectedIndex].text;
 
             const payload = {
                 order_number: form.order_number.value,
-                customer_name: form.customer_name.value,
+                customer_id: parseInt(form.customer_id.value),
+                customer_name: customerName,
                 order_date: form.order_date.value || new Date().toISOString().split('T')[0],
                 items: [{
                     product_id: parseInt(product_id),
@@ -1151,10 +1219,13 @@
             e.preventDefault();
             const form = e.target;
             const product_id = document.getElementById('purchaseProduct').value;
+            const supplierSelect = document.getElementById('purchaseSupplier');
+            const supplierName = supplierSelect.options[supplierSelect.selectedIndex].text;
 
             const payload = {
                 order_number: form.order_number.value,
-                supplier_name: form.supplier_name.value,
+                supplier_id: parseInt(form.supplier_id.value),
+                supplier_name: supplierName,
                 order_date: form.order_date.value || new Date().toISOString().split('T')[0],
                 items: [{
                     product_id: parseInt(product_id),
@@ -1496,6 +1567,7 @@
                 if (result.status === 'success') {
                     customersData = result.data || [];
                     renderCustomers();
+                    populateCustomerDropdown(); // Update dropdown juga
                     alert('✅ Customers berhasil disync dari Odoo!');
                 } else {
                     alert('❌ ' + (result.message || 'Gagal load customers'));
@@ -1554,6 +1626,104 @@
                     </td>
                 </tr>
             `).join('');
+        }
+
+        function showCustomerModal() {
+            const modalHtml = `
+                <div id="customerModal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; overflow: auto;">
+                    <div style="margin: 50px auto; max-width: 500px; position: relative;">
+                        <div style="background: white; border-radius: 10px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <h4 style="color: var(--primary); margin: 0;">👥 Tambah Customer</h4>
+                                <button type="button" id="closeCustomerModalBtn" style="background: none; border: none; font-size: 1.5em; cursor: pointer;">&times;</button>
+                            </div>
+                            <form id="customerForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Nama Customer *</label>
+                                    <input type="text" class="form-control" id="customerName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="customerEmail">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Telepon</label>
+                                    <input type="tel" class="form-control" id="customerPhone">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Alamat</label>
+                                    <input type="text" class="form-control" id="customerAddress">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Kota</label>
+                                    <input type="text" class="form-control" id="customerCity">
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input type="checkbox" class="form-check-input" id="customerIsCompany">
+                                    <label class="form-check-label" for="customerIsCompany">Ini adalah Perusahaan</label>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="submit" class="btn btn-success btn-action">💾 Simpan Customer</button>
+                                    <button type="button" id="cancelCustomerModalBtn" class="btn btn-danger btn-action">Batal</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            const modal = document.getElementById('customerModal');
+            const closeBtn = document.getElementById('closeCustomerModalBtn');
+            const cancelBtn = document.getElementById('cancelCustomerModalBtn');
+            const form = document.getElementById('customerForm');
+
+            closeBtn.addEventListener('click', closeCustomerModal);
+            cancelBtn.addEventListener('click', closeCustomerModal);
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeCustomerModal();
+            });
+            form.addEventListener('submit', saveCustomer);
+
+            setTimeout(() => document.getElementById('customerName').focus(), 100);
+        }
+
+        function closeCustomerModal() {
+            const modal = document.getElementById('customerModal');
+            if (modal) modal.remove();
+        }
+
+        async function saveCustomer(e) {
+            e.preventDefault();
+            const customer = {
+                name: document.getElementById('customerName').value,
+                email: document.getElementById('customerEmail').value,
+                phone: document.getElementById('customerPhone').value,
+                address: document.getElementById('customerAddress').value,
+                city: document.getElementById('customerCity').value,
+                is_company: document.getElementById('customerIsCompany').checked
+            };
+
+            try {
+                const response = await fetch('/api/odoo/customers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(customer)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert('✅ Customer berhasil ditambahkan!');
+                    closeCustomerModal();
+                    loadCustomersForDropdown(); // Refresh dropdown
+                    loadCustomersFromOdoo();
+                } else {
+                    alert('❌ ' + (result.message || 'Gagal menambah customer'));
+                }
+            } catch (error) {
+                console.error('Error saving customer:', error);
+                alert('❌ Error: ' + error.message);
+            }
         }
 
         async function deleteCustomer(customerId) {
@@ -1708,6 +1878,7 @@
                 if (result.status === 'success') {
                     alert('✅ Vendor berhasil ditambahkan!');
                     closeVendorModal();
+                    loadVendorsForDropdown(); // Refresh dropdown
                     loadVendorsFromOdoo();
                 } else {
                     alert('❌ ' + (result.message || 'Gagal menambah vendor'));
@@ -1727,6 +1898,8 @@
                 if (result.status === 'success') {
                     vendorsData = result.data || [];
                     renderVendors();
+                    populateVendorDropdown(); // Update dropdown juga
+                    alert('✅ Vendors berhasil disync dari Odoo!');
                 } else {
                     alert('❌ ' + (result.message || 'Gagal load vendors'));
                 }

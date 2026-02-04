@@ -1717,18 +1717,68 @@ class ApiController extends Controller
         try {
             $this->initOdooService();
             
-            $customers = $this->odooService->getCustomers(50);
+            $result = $this->odooService->getCustomers(50);
             
-            if (isset($customers['error'])) {
+            if (!$result['success']) {
                 return $this->response->setStatusCode(400)->setJsonContent([
                     'status' => 'error',
-                    'message' => $customers['error']
+                    'message' => $result['error'] ?? 'Failed to load customers'
                 ]);
             }
 
             return $this->response->setJsonContent([
                 'status' => 'success',
-                'data' => $customers
+                'data' => $result['data'],
+                'count' => $result['count']
+            ]);
+        } catch (Exception $e) {
+            return $this->response->setStatusCode(500)->setJsonContent([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * POST /api/odoo/customers - Create new customer
+     */
+    public function customersCreateAction()
+    {
+        try {
+            $this->initOdooService();
+
+            if ($this->request->isPost()) {
+                $data = $this->request->getJsonRawBody(true);
+                
+                if (empty($data['name'])) {
+                    return $this->response->setStatusCode(400)->setJsonContent([
+                        'status' => 'error',
+                        'success' => false,
+                        'message' => 'Customer name is required'
+                    ]);
+                }
+
+                $result = $this->odooService->addCustomer($data);
+                
+                if (is_array($result) && isset($result['error'])) {
+                    return $this->response->setStatusCode(400)->setJsonContent([
+                        'status' => 'error',
+                        'success' => false,
+                        'message' => $result['error']
+                    ]);
+                }
+
+                return $this->response->setJsonContent([
+                    'status' => 'success',
+                    'success' => true,
+                    'message' => 'Customer created successfully',
+                    'data' => ['id' => $result]
+                ]);
+            }
+
+            return $this->response->setStatusCode(405)->setJsonContent([
+                'status' => 'error',
+                'message' => 'POST method required'
             ]);
         } catch (Exception $e) {
             return $this->response->setStatusCode(500)->setJsonContent([

@@ -304,11 +304,31 @@ class OdooService
      */
     public function getCustomers($limit = 50)
     {
-        return $this->read('res.partner', 
-            ['id', 'name', 'ref', 'email', 'phone', 'city', 'street', 'country_id'], 
-            [['is_company', '=', false]], 
-            $limit
-        );
+        try {
+            error_log('[OdooService] Getting customers with limit: ' . $limit);
+            
+            // res.partner dengan is_company=false adalah customers
+            $fields = ['id', 'name', 'ref', 'email', 'phone', 'city', 'street', 'country_id', 'is_company'];
+            // Get all partners without is_company filter for now
+            $domain = [];
+            
+            $customers = $this->search_read('res.partner', $domain, $fields, $limit);
+            
+            error_log('[OdooService] Found customers: ' . count($customers));
+            
+            return [
+                'success' => true,
+                'data' => $customers,
+                'count' => count($customers)
+            ];
+        } catch (Exception $e) {
+            error_log('[OdooService ERROR] Getting customers: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'data' => []
+            ];
+        }
     }
 
     /**
@@ -318,7 +338,8 @@ class OdooService
     {
         $values = [
             'name' => $data['name'],
-            'is_company' => false,
+            'is_company' => $data['is_company'] ?? false,
+            'customer_rank' => 1  // Mark as customer
         ];
 
         if (!empty($data['email'])) {
@@ -329,6 +350,9 @@ class OdooService
         }
         if (!empty($data['city'])) {
             $values['city'] = $data['city'];
+        }
+        if (!empty($data['address'])) {
+            $values['street'] = $data['address'];
         }
         if (!empty($data['street'])) {
             $values['street'] = $data['street'];
