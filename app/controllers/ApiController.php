@@ -1709,4 +1709,262 @@ class ApiController extends Controller
         }
     }
 
+    /**
+     * Get customers from Odoo
+     */
+    public function customersAction()
+    {
+        try {
+            $this->initOdooService();
+            
+            $customers = $this->odooService->getCustomers(50);
+            
+            if (isset($customers['error'])) {
+                return $this->response->setStatusCode(400)->setJsonContent([
+                    'status' => 'error',
+                    'message' => $customers['error']
+                ]);
+            }
+
+            return $this->response->setJsonContent([
+                'status' => 'success',
+                'data' => $customers
+            ]);
+        } catch (Exception $e) {
+            return $this->response->setStatusCode(500)->setJsonContent([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Add customer to Odoo
+     */
+    public function customersAddAction()
+    {
+        if (!$this->request->isPost()) {
+            return $this->response->setJsonContent([
+                'status' => 'error',
+                'message' => 'POST method required'
+            ]);
+        }
+
+        try {
+            $this->initOdooService();
+
+            $data = [
+                'name'   => $this->request->getPost('name'),
+                'email'  => $this->request->getPost('email'),
+                'phone'  => $this->request->getPost('phone'),
+                'city'   => $this->request->getPost('city'),
+            ];
+
+            if (empty($data['name'])) {
+                return $this->response->setJsonContent([
+                    'status' => 'error',
+                    'message' => 'Customer name is required'
+                ]);
+            }
+
+            $result = $this->odooService->addCustomer($data);
+
+            if (isset($result['error'])) {
+                return $this->response->setJsonContent([
+                    'status' => 'error',
+                    'message' => $result['error']
+                ]);
+            }
+
+            return $this->response->setJsonContent([
+                'status' => 'success',
+                'message' => 'Customer added successfully',
+                'data' => $result
+            ]);
+        } catch (Exception $e) {
+            return $this->response->setStatusCode(500)->setJsonContent([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Delete customer from Odoo
+     */
+    public function customersDeleteAction()
+    {
+        if (!$this->request->isDelete() && !$this->request->isPost()) {
+            return $this->response->setJsonContent([
+                'status' => 'error',
+                'message' => 'DELETE or POST method required'
+            ]);
+        }
+
+        try {
+            $this->initOdooService();
+
+            // Get ID from URL parameter or POST data
+            $customerId = $this->dispatcher->getParam('id');
+            if (!$customerId) {
+                $customerId = $this->request->getPost('id');
+            }
+
+            if (!$customerId) {
+                return $this->response->setJsonContent([
+                    'status' => 'error',
+                    'message' => 'Customer ID is required'
+                ]);
+            }
+
+            $result = $this->odooService->deleteCustomer($customerId);
+
+            if (isset($result['error'])) {
+                return $this->response->setJsonContent([
+                    'status' => 'error',
+                    'message' => $result['error']
+                ]);
+            }
+
+            return $this->response->setJsonContent([
+                'status' => 'success',
+                'message' => 'Customer deleted successfully'
+            ]);
+        } catch (Exception $e) {
+            return $this->response->setStatusCode(500)->setJsonContent([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * GET /api/odoo/vendors - Get all vendors
+     */
+    public function vendorsAction()
+    {
+        try {
+            $this->initOdooService();
+
+            if ($this->request->isGet()) {
+                $result = $this->odooService->getVendors(50);
+                return $this->response->setJsonContent($result);
+            }
+
+            return $this->response->setStatusCode(405)->setJsonContent([
+                'status' => 'error',
+                'message' => 'GET method required'
+            ]);
+        } catch (Exception $e) {
+            return $this->response->setStatusCode(500)->setJsonContent([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * POST /api/odoo/vendors - Create new vendor
+     */
+    public function vendorsCreateAction()
+    {
+        try {
+            $this->initOdooService();
+
+            if ($this->request->isPost()) {
+                $data = $this->request->getJsonRawBody(true);
+                
+                if (empty($data['name'])) {
+                    return $this->response->setStatusCode(400)->setJsonContent([
+                        'status' => 'error',
+                        'success' => false,
+                        'message' => 'Vendor name is required'
+                    ]);
+                }
+
+                $result = $this->odooService->createVendor($data);
+                
+                if (!$result['success']) {
+                    return $this->response->setStatusCode(400)->setJsonContent([
+                        'status' => 'error',
+                        'success' => false,
+                        'message' => $result['error']
+                    ]);
+                }
+
+                return $this->response->setJsonContent([
+                    'status' => 'success',
+                    'success' => true,
+                    'message' => 'Vendor created successfully',
+                    'data' => $result
+                ]);
+            }
+
+            return $this->response->setStatusCode(405)->setJsonContent([
+                'status' => 'error',
+                'message' => 'POST method required'
+            ]);
+        } catch (Exception $e) {
+            return $this->response->setStatusCode(500)->setJsonContent([
+                'status' => 'error',
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * DELETE /api/odoo/vendors/{id} - Delete vendor
+     */
+    public function vendorsDeleteAction()
+    {
+        if (!$this->request->isDelete() && !$this->request->isPost()) {
+            return $this->response->setStatusCode(405)->setJsonContent([
+                'status' => 'error',
+                'success' => false,
+                'message' => 'DELETE or POST method required'
+            ]);
+        }
+
+        try {
+            $this->initOdooService();
+
+            // Get ID from URL parameter or POST data
+            $vendorId = $this->dispatcher->getParam('id');
+            if (!$vendorId) {
+                $vendorId = $this->request->getPost('id');
+            }
+
+            if (!$vendorId) {
+                return $this->response->setJsonContent([
+                    'status' => 'error',
+                    'success' => false,
+                    'message' => 'Vendor ID is required'
+                ]);
+            }
+
+            $result = $this->odooService->deleteVendor($vendorId);
+
+            if (!$result['success']) {
+                return $this->response->setJsonContent([
+                    'status' => 'error',
+                    'success' => false,
+                    'message' => $result['error']
+                ]);
+            }
+
+            return $this->response->setJsonContent([
+                'status' => 'success',
+                'success' => true,
+                'message' => 'Vendor deleted successfully'
+            ]);
+        } catch (Exception $e) {
+            return $this->response->setStatusCode(500)->setJsonContent([
+                'status' => 'error',
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
 }

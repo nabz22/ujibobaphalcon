@@ -210,6 +210,28 @@ $router->addGet('/api/commerce/inventory-movements', [
     'action'     => 'commerceInventoryMovements',
 ]);
 
+// ===== CUSTOMERS ROUTES =====
+
+$router->addGet('/customers', [
+    'controller' => 'customers',
+    'action'     => 'index',
+]);
+
+$router->addGet('/api/customers', [
+    'controller' => 'api',
+    'action'     => 'customers',
+]);
+
+$router->addPost('/api/customers/add', [
+    'controller' => 'api',
+    'action'     => 'customersAdd',
+]);
+
+$router->addPost('/api/customers/delete', [
+    'controller' => 'api',
+    'action'     => 'customersDelete',
+]);
+
 // ===== ODOO INTEGRATION (Optional) =====
 
 $router->addGet('/api/odoo/test', [
@@ -230,6 +252,38 @@ $router->addGet('/api/odoo/products', [
 $router->addGet('/api/odoo/dashboard', [
     'controller' => 'api',
     'action'     => 'dashboard',
+]);
+
+$router->addGet('/api/odoo/customers', [
+    'controller' => 'api',
+    'action'     => 'customers',
+]);
+
+$router->addDelete('/api/odoo/customers/:id', [
+    'controller' => 'api',
+    'action'     => 'customersDelete',
+]);
+
+// ===== VENDORS ROUTES =====
+
+$router->addGet('/vendors', [
+    'controller' => 'vendors',
+    'action'     => 'index',
+]);
+
+$router->addGet('/api/odoo/vendors', [
+    'controller' => 'api',
+    'action'     => 'vendors',
+]);
+
+$router->addPost('/api/odoo/vendors', [
+    'controller' => 'api',
+    'action'     => 'vendorsCreate',
+]);
+
+$router->addDelete('/api/odoo/vendors/{id:[0-9]+}', [
+    'controller' => 'api',
+    'action'     => 'vendorsDelete',
 ]);
 
 // Kembalikan instance router ke DI

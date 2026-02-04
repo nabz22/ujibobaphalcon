@@ -300,6 +300,52 @@ class OdooService
     }
 
     /**
+     * Get list of customers dari Odoo (res.partner dengan is_company=false)
+     */
+    public function getCustomers($limit = 50)
+    {
+        return $this->read('res.partner', 
+            ['id', 'name', 'ref', 'email', 'phone', 'city', 'street', 'country_id'], 
+            [['is_company', '=', false]], 
+            $limit
+        );
+    }
+
+    /**
+     * Add customer to Odoo
+     */
+    public function addCustomer($data)
+    {
+        $values = [
+            'name' => $data['name'],
+            'is_company' => false,
+        ];
+
+        if (!empty($data['email'])) {
+            $values['email'] = $data['email'];
+        }
+        if (!empty($data['phone'])) {
+            $values['phone'] = $data['phone'];
+        }
+        if (!empty($data['city'])) {
+            $values['city'] = $data['city'];
+        }
+        if (!empty($data['street'])) {
+            $values['street'] = $data['street'];
+        }
+
+        return $this->create('res.partner', $values);
+    }
+
+    /**
+     * Delete customer from Odoo
+     */
+    public function deleteCustomer($customerId)
+    {
+        return $this->delete('res.partner', [$customerId]);
+    }
+
+    /**
      * Get list of sales orders dari Odoo
      */
     public function getSalesOrders($limit = 20)
@@ -362,6 +408,182 @@ class OdooService
         } catch (Exception $e) {
             error_log('[OdooService CALL ACTION ERROR] ' . $e->getMessage());
             return ['error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Search and Read from Odoo
+     * @param string $model
+     * @param array $domain
+     * @param array $fields
+     * @param int $limit
+     * @return array
+     */
+    public function search_read($model, $domain = [], $fields = [], $limit = 10)
+    {
+        try {
+            error_log('[OdooService] search_read: ' . $model . ', domain: ' . json_encode($domain));
+            
+            $url = $this->odooUrl . '/jsonrpc';
+            
+            // First search for IDs
+            $searchPayload = [
+                'jsonrpc'   => '2.0',
+                'method'    => 'call',
+                'params'    => [
+                    'service' => 'object',
+                    'method'  => 'execute_kw',
+                    'args'    => [
+                        $this->odooDatabase,
+                        $this->uid,
+                        $this->odooPassword,
+                        $model,
+                        'search',
+                        [$domain],
+                        ['limit' => $limit]
+                    ]
+                ],
+                'id'      => mt_rand()
+            ];
+
+            $searchResponse = $this->callJsonRpc($url, $searchPayload);
+            
+            if (!isset($searchResponse['result'])) {
+                error_log('[OdooService] search_read search failed: ' . json_encode($searchResponse));
+                return [];
+            }
+
+            $ids = $searchResponse['result'];
+            
+            if (empty($ids)) {
+                return [];
+            }
+
+            // Then read the data
+            $readPayload = [
+                'jsonrpc'   => '2.0',
+                'method'    => 'call',
+                'params'    => [
+                    'service' => 'object',
+                    'method'  => 'execute_kw',
+                    'args'    => [
+                        $this->odooDatabase,
+                        $this->uid,
+                        $this->odooPassword,
+                        $model,
+                        'read',
+                        [$ids],
+                        ['fields' => $fields]
+                    ]
+                ],
+                'id'      => mt_rand()
+            ];
+
+            $readResponse = $this->callJsonRpc($url, $readPayload);
+            
+            return $readResponse['result'] ?? [];
+        } catch (Exception $e) {
+            error_log('[OdooService search_read ERROR] ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get Vendors from Odoo
+     * @param int $limit
+     * @return array
+     */
+    public function getVendors($limit = 50)
+    {
+        try {
+            error_log('[OdooService] Getting vendors with limit: ' . $limit);
+            
+            // res.partner dengan supplier_rank > 0 adalah vendor, atau coba dengan is_company
+            $fields = ['id', 'name', 'ref', 'email', 'phone', 'city', 'street', 'country_id', 'is_company'];
+            // Filter untuk partner yang bisa menjadi supplier (supplier_rank >= 1 atau baru ditambah)
+            $domain = [];  // Get semua partners untuk debugging
+            
+            $vendors = $this->search_read('res.partner', $domain, $fields, $limit);
+            
+            error_log('[OdooService] Found vendors: ' . count($vendors));
+            
+            return [
+                'success' => true,
+                'data' => $vendors,
+                'count' => count($vendors)
+            ];
+        } catch (Exception $e) {
+            error_log('[OdooService ERROR] Getting vendors: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'data' => []
+            ];
+        }
+    }
+
+    /**
+     * Create Vendor in Odoo
+     * @param array $vendorData
+     * @return array
+     */
+    public function createVendor($vendorData)
+    {
+        try {
+            error_log('[OdooService] Creating vendor: ' . json_encode($vendorData));
+            
+            $data = [
+                'name' => $vendorData['name'] ?? '',
+                'email' => $vendorData['email'] ?? '',
+                'phone' => $vendorData['phone'] ?? '',
+                'street' => $vendorData['address'] ?? '',
+                'city' => $vendorData['city'] ?? '',
+                'is_company' => $vendorData['is_company'] ?? false,
+                'supplier_rank' => 1  // Mark as supplier
+            ];
+            
+            $vendorId = $this->create('res.partner', $data);
+            
+            error_log('[OdooService] Vendor created with ID: ' . $vendorId);
+            
+            return [
+                'success' => true,
+                'id' => $vendorId,
+                'message' => 'Vendor created successfully'
+            ];
+        } catch (Exception $e) {
+            error_log('[OdooService ERROR] Creating vendor: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Delete Vendor from Odoo
+     * @param int $vendorId
+     * @return array
+     */
+    public function deleteVendor($vendorId)
+    {
+        try {
+            error_log('[OdooService] Deleting vendor: ' . $vendorId);
+            
+            $this->unlink('res.partner', [$vendorId]);
+            
+            error_log('[OdooService] Vendor deleted successfully');
+            
+            return [
+                'success' => true,
+                'message' => 'Vendor deleted successfully'
+            ];
+        } catch (Exception $e) {
+            error_log('[OdooService ERROR] Deleting vendor: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
         }
     }
 

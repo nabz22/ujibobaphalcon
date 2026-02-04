@@ -293,6 +293,8 @@
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#sales">📈 Sales</button>
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#purchase">🛒 Purchase</button>
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#invoices">📄 Invoice</button>
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#customers">👥 Customers</button>
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#vendors">👔 Vendors</button>
             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#inventory">📦 Inventory</button>
         </div>
 
@@ -508,6 +510,80 @@
                 </div>
             </div>
 
+            <!-- CUSTOMERS TAB -->
+            <div class="tab-pane fade" id="customers">
+                <div class="form-section">
+                    <h3>👥 Customers dari Odoo</h3>
+                    <div style="margin-bottom: 10px;">
+                        <button class="btn btn-primary btn-action" onclick="loadCustomersFromOdoo()">🔄 Sync Customers dari Odoo</button>
+                    </div>
+                    <input type="text" class="form-control" id="customerSearch" placeholder="🔍 Cari customer..." onkeyup="filterCustomers()" style="margin-bottom: 15px;">
+                </div>
+
+                <div class="table-section">
+                    <h4>📋 Daftar Customers (Top 50)</h4>
+                    <div style="overflow-x: auto;">
+                        <table id="customersTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; font-size: 0.9em;">
+                            <thead style="background: #f5f5f5;">
+                                <tr>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">ID</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Nama</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Email</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Telepon</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Kota</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersTableBody">
+                                <tr>
+                                    <td colspan="6" style="padding: 15px; text-align: center; color: #999;">
+                                        ⏳ Memuat customers...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VENDORS TAB -->
+            <div class="tab-pane fade" id="vendors">
+                <div class="form-section">
+                    <h3>👔 Vendors dari Odoo</h3>
+                    <div style="margin-bottom: 10px;">
+                        <button class="btn btn-primary btn-action" onclick="loadVendorsFromOdoo()">🔄 Sync Vendors dari Odoo</button>
+                        <button class="btn btn-success btn-action" onclick="showVendorModal()">➕ Tambah Vendor</button>
+                    </div>
+                    <input type="text" class="form-control" id="vendorSearch" placeholder="🔍 Cari vendor..." onkeyup="filterVendors()" style="margin-bottom: 15px;">
+                </div>
+
+                <div class="table-section">
+                    <h4>📋 Daftar Vendors (Top 50)</h4>
+                    <div style="overflow-x: auto;">
+                        <table id="vendorsTable" style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; font-size: 0.9em;">
+                            <thead style="background: #f5f5f5;">
+                                <tr>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">ID</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Nama</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Referensi</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Email</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Telepon</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Kota</th>
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vendorsTableBody">
+                                <tr>
+                                    <td colspan="7" style="padding: 15px; text-align: center; color: #999;">
+                                        ⏳ Memuat vendors...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- INVENTORY TAB -->
             <div class="tab-pane fade" id="inventory">
                 <div class="table-section">
@@ -527,6 +603,8 @@
         let salesOrders = [];
         let purchaseOrders = [];
         let invoices = [];
+        let customersData = [];
+        let vendorsData = [];
 
         // Initialize
         window.addEventListener('load', () => {
@@ -1406,6 +1484,108 @@
             }
         }
 
+        // ===== CUSTOMERS FUNCTIONS =====
+        let customersData = [];
+
+        async function loadCustomersFromOdoo() {
+            try {
+                console.log('Loading customers from Odoo...');
+                const response = await fetch('/api/odoo/customers');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    customersData = result.data || [];
+                    renderCustomers();
+                    alert('✅ Customers berhasil disync dari Odoo!');
+                } else {
+                    alert('❌ ' + (result.message || 'Gagal load customers'));
+                }
+            } catch (error) {
+                console.error('Error loading customers:', error);
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        function renderCustomers() {
+            const tbody = document.getElementById('customersTableBody');
+            
+            if (customersData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #999;">Belum ada customers. Klik "Sync Customers dari Odoo" untuk memuat data.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = customersData.map(customer => `
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customer.id || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>${customer.name || '-'}</strong></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customer.email || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customer.phone || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customer.city || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+                        <button class="btn-action btn-danger" onclick="deleteCustomer(${customer.id})" style="padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">🗑️ Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterCustomers() {
+            const searchInput = document.getElementById('customerSearch').value.toLowerCase();
+            const filteredCustomers = customersData.filter(customer =>
+                (customer.name && customer.name.toLowerCase().includes(searchInput)) ||
+                (customer.email && customer.email.toLowerCase().includes(searchInput)) ||
+                (customer.phone && customer.phone.toLowerCase().includes(searchInput))
+            );
+
+            const tbody = document.getElementById('customersTableBody');
+            if (filteredCustomers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="padding: 15px; text-align: center; color: #999;">Tidak ada customer yang sesuai.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filteredCustomers.map(customer => `
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customer.id || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>${customer.name || '-'}</strong></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customer.email || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customer.phone || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customer.city || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+                        <button class="btn-action btn-danger" onclick="deleteCustomer(${customer.id})" style="padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">🗑️ Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function deleteCustomer(customerId) {
+            if (!confirm('Apakah Anda yakin ingin menghapus customer ini?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/odoo/customers/${customerId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert('✅ Customer berhasil dihapus!');
+                    customersData = customersData.filter(c => c.id !== customerId);
+                    renderCustomers();
+                } else {
+                    alert('❌ ' + (result.message || 'Gagal hapus customer'));
+                }
+            } catch (error) {
+                console.error('Error deleting customer:', error);
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        // Load customers and vendors on page load
+        window.addEventListener('load', function() {
+            loadCustomersFromOdoo();
+            loadVendorsFromOdoo();
+        });
+
         async function deleteInventoryProduct(productId) {
             if (!confirm('Yakin ingin menghapus produk ini dari inventory?')) {
                 return;
@@ -1438,6 +1618,197 @@
             document.getElementById('totalProducts').textContent = allProducts.filter(p => p.quantity_on_hand > 0).length;
             document.getElementById('totalSales').textContent = salesOrders.length;
             document.getElementById('totalInvoices').textContent = invoices.length;
+        }
+
+        // VENDORS FUNCTIONS
+        function showVendorModal() {
+            const modalHtml = `
+                <div id="vendorModal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; overflow: auto;">
+                    <div style="margin: 50px auto; max-width: 500px; position: relative;">
+                        <div style="background: white; border-radius: 10px; padding: 25px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <h4 style="color: var(--primary); margin: 0;">👔 Tambah Vendor</h4>
+                                <button type="button" id="closeVendorModalBtn" style="background: none; border: none; font-size: 1.5em; cursor: pointer;">&times;</button>
+                            </div>
+                            <form id="vendorForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Nama Vendor *</label>
+                                    <input type="text" class="form-control" id="vendorName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="vendorEmail">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Telepon</label>
+                                    <input type="tel" class="form-control" id="vendorPhone">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Alamat</label>
+                                    <input type="text" class="form-control" id="vendorAddress">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Kota</label>
+                                    <input type="text" class="form-control" id="vendorCity">
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input type="checkbox" class="form-check-input" id="vendorIsCompany">
+                                    <label class="form-check-label" for="vendorIsCompany">Ini adalah Perusahaan</label>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="submit" class="btn btn-success btn-action">💾 Simpan Vendor</button>
+                                    <button type="button" id="cancelVendorModalBtn" class="btn btn-danger btn-action">Batal</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            const modal = document.getElementById('vendorModal');
+            const closeBtn = document.getElementById('closeVendorModalBtn');
+            const cancelBtn = document.getElementById('cancelVendorModalBtn');
+            const form = document.getElementById('vendorForm');
+
+            closeBtn.addEventListener('click', closeVendorModal);
+            cancelBtn.addEventListener('click', closeVendorModal);
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeVendorModal();
+            });
+            form.addEventListener('submit', saveVendor);
+
+            setTimeout(() => document.getElementById('vendorName').focus(), 100);
+        }
+
+        function closeVendorModal() {
+            const modal = document.getElementById('vendorModal');
+            if (modal) modal.remove();
+        }
+
+        async function saveVendor(e) {
+            e.preventDefault();
+            const vendor = {
+                name: document.getElementById('vendorName').value,
+                email: document.getElementById('vendorEmail').value,
+                phone: document.getElementById('vendorPhone').value,
+                address: document.getElementById('vendorAddress').value,
+                city: document.getElementById('vendorCity').value,
+                is_company: document.getElementById('vendorIsCompany').checked
+            };
+
+            try {
+                const response = await fetch('/api/odoo/vendors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(vendor)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert('✅ Vendor berhasil ditambahkan!');
+                    closeVendorModal();
+                    loadVendorsFromOdoo();
+                } else {
+                    alert('❌ ' + (result.message || 'Gagal menambah vendor'));
+                }
+            } catch (error) {
+                console.error('Error saving vendor:', error);
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        async function loadVendorsFromOdoo() {
+            try {
+                console.log('Loading vendors from Odoo...');
+                const response = await fetch('/api/odoo/vendors');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    vendorsData = result.data || [];
+                    renderVendors();
+                } else {
+                    alert('❌ ' + (result.message || 'Gagal load vendors'));
+                }
+            } catch (error) {
+                console.error('Error loading vendors:', error);
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        function renderVendors() {
+            const tbody = document.getElementById('vendorsTableBody');
+            
+            if (vendorsData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="padding: 15px; text-align: center; color: #999;">Belum ada vendors. Klik "Sync Vendors dari Odoo" untuk memuat data.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = vendorsData.map(vendor => `
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${vendor.id || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>${vendor.name || '-'}</strong></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${vendor.ref || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${vendor.email || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${vendor.phone || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${vendor.city || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+                        <button class="btn-action btn-danger" onclick="deleteVendor(${vendor.id})" style="padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">🗑️ Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterVendors() {
+            const searchInput = document.getElementById('vendorSearch').value.toLowerCase();
+            const filteredVendors = vendorsData.filter(vendor =>
+                (vendor.name && vendor.name.toLowerCase().includes(searchInput)) ||
+                (vendor.email && vendor.email.toLowerCase().includes(searchInput)) ||
+                (vendor.phone && vendor.phone.toLowerCase().includes(searchInput))
+            );
+
+            const tbody = document.getElementById('vendorsTableBody');
+            if (filteredVendors.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="padding: 15px; text-align: center; color: #999;">Tidak ada vendor yang sesuai.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filteredVendors.map(vendor => `
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${vendor.id || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>${vendor.name || '-'}</strong></td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${vendor.ref || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${vendor.email || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${vendor.phone || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${vendor.city || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">
+                        <button class="btn-action btn-danger" onclick="deleteVendor(${vendor.id})" style="padding: 6px 12px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">🗑️ Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function deleteVendor(vendorId) {
+            if (!confirm('Yakin ingin menghapus vendor ini?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/odoo/vendors/${vendorId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    alert('✅ Vendor berhasil dihapus!');
+                    loadVendorsFromOdoo();
+                } else {
+                    alert('❌ ' + (result.message || 'Gagal menghapus vendor'));
+                }
+            } catch (error) {
+                console.error('Error deleting vendor:', error);
+                alert('❌ Error: ' + error.message);
+            }
         }
     </script>
 </body>
