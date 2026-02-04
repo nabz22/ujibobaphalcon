@@ -3,11 +3,12 @@
 $loader = new \Phalcon\Autoload\Loader();
 
 /**
- * We're a registering a set of directories taken from the configuration file
+ * We're registering a set of directories for autoloading
  */
 $loader->setDirectories(
     [
-        $config->application->controllersDir,
-        $config->application->modelsDir
+        APP_PATH . '/controllers/',
+        APP_PATH . '/models/',
+        APP_PATH . '/library/'
     ]
 )->register();

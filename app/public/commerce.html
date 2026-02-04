@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commerce Hub - Sales, Purchase, Invoice, Inventory</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        :root {
+            --primary: #667eea;
+            --success: #48bb78;
+            --warning: #f6ad55;
+            --danger: #f56565;
+            --info: #4299e1;
+        }
+
+        * {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container-main {
+            max-width: 1400px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--info));
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 2.5em;
+        }
+
+        .header p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .nav-tabs {
+            border-bottom: 2px solid #e2e8f0;
+            background: #f8f9fa;
+            padding: 0 30px;
+        }
+
+        .nav-link {
+            border: none;
+            color: #667eea;
+            font-weight: 600;
+            padding: 15px 20px;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-link:hover {
+            color: #764ba2;
+            background: #eef2ff;
+        }
+
+        .nav-link.active {
+            color: white;
+            background: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            padding: 30px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-card h3 {
+            font-size: 2.5em;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .stat-card p {
+            margin: 10px 0 0;
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .form-section h3 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+        }
+
+        .table-section {
+            margin-top: 30px;
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .invoice-table thead {
+            background: linear-gradient(135deg, var(--primary), var(--info));
+            color: white;
+        }
+
+        .invoice-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            border: none;
+        }
+
+        .invoice-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .invoice-table tbody tr:hover {
+            background: #f0f4ff;
+        }
+
+        .table-section h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            font-size: 0.9em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-group-addon {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 15px;
+            display: flex;
+            align-items: center;
+            border-radius: 5px 0 0 5px;
+        }
+
+        .form-control {
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .alert {
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+
+        .badge-draft {
+            background: #e2e8f0;
+            color: #667eea;
+        }
+
+        .badge-confirmed {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .badge-done {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .nav-tabs {
+                padding: 0 15px;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            .tab-content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-main">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>🏢 Commerce Hub</h1>
+            <p>Kelola Sales, Purchase, Invoice & Inventory dalam Satu Dashboard</p>
+        </div>
+
+        <!-- TABS -->
+        <div class="nav-tabs" role="tablist">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#dashboard">📊 Dashboard</button>
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#sales">📈 Sales Order</button>
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#purchase">🛒 Purchase Order</button>
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#invoices">📄 Invoice</button>
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#inventory">📦 Inventory</button>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="tab-content">
+            <!-- DASHBOARD TAB -->
+            <div class="tab-pane fade show active" id="dashboard">
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <h3 id="totalSales">0</h3>
+                        <p>Sales Orders</p>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #48bb78, #38a169);">
+                        <h3 id="totalPurchase">0</h3>
+                        <p>Purchase Orders</p>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #f6ad55, #ed8936);">
+                        <h3 id="totalInvoices">0</h3>
+                        <p>Invoices</p>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #4299e1, #2b6cb0);">
+                        <h3 id="totalProducts">0</h3>
+                        <p>Products in Stock</p>
+                    </div>
+                </div>
+
+                <div id="dashboardContent"></div>
+            </div>
+
+            <!-- SALES TAB -->
+            <div class="tab-pane fade" id="sales">
+                <div class="form-section">
+                    <h3>➕ Buat Sales Order Baru</h3>
+                    <form id="salesForm" onsubmit="createSalesOrder(event)">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nomor SO *</label>
+                                <input type="text" class="form-control" name="order_number" placeholder="SO-001" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nama Customer *</label>
+                                <input type="text" class="form-control" name="customer_name" placeholder="PT Maju Jaya" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Order</label>
+                                <input type="date" class="form-control" name="order_date">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Produk</label>
+                                <select class="form-control" id="salesProduct" required>
+                                    <option value="">Pilih Produk...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Qty</label>
+                                <input type="number" class="form-control" name="quantity" placeholder="0" step="0.01" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Catatan</label>
+                                <input type="text" class="form-control" name="notes" placeholder="Catatan">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-action">💾 Buat Sales Order</button>
+                    </form>
+                </div>
+
+                <div class="table-section">
+                    <h4>📋 Daftar Sales Order</h4>
+                    <div id="salesList"></div>
+                </div>
+            </div>
+
+            <!-- PURCHASE TAB -->
+            <div class="tab-pane fade" id="purchase">
+                <div class="form-section">
+                    <h3>➕ Buat Purchase Order Baru</h3>
+                    <form id="purchaseForm" onsubmit="createPurchaseOrder(event)">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nomor PO *</label>
+                                <input type="text" class="form-control" name="order_number" placeholder="PO-001" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nama Supplier *</label>
+                                <input type="text" class="form-control" name="supplier_name" placeholder="PT Jaya Supplier" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Order</label>
+                                <input type="date" class="form-control" name="order_date">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Produk</label>
+                                <select class="form-control" id="purchaseProduct" required>
+                                    <option value="">Pilih Produk...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Qty</label>
+                                <input type="number" class="form-control" name="quantity" placeholder="0" step="0.01" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Catatan</label>
+                                <input type="text" class="form-control" name="notes" placeholder="Catatan">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-action">💾 Buat Purchase Order</button>
+                    </form>
+                </div>
+
+                <div class="table-section">
+                    <h4>📋 Daftar Purchase Order</h4>
+                    <div id="purchaseList"></div>
+                </div>
+            </div>
+
+            <!-- INVOICES TAB -->
+            <div class="tab-pane fade" id="invoices">
+                <div class="form-section">
+                    <h3>➕ Buat Invoice Baru</h3>
+                    <form id="invoiceForm" onsubmit="createInvoice(event)">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nomor Invoice *</label>
+                                <input type="text" class="form-control" name="invoice_number" placeholder="INV-001" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Invoice</label>
+                                <input type="date" class="form-control" name="invoice_date">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Dari Sales Order</label>
+                                <select class="form-control" name="sales_order_id" id="invoiceSalesOrder">
+                                    <option value="">Pilih Sales Order...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Total Amount *</label>
+                                <input type="number" class="form-control" name="total_amount" placeholder="0" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tax</label>
+                                <input type="number" class="form-control" name="tax_amount" placeholder="0" step="0.01">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Catatan</label>
+                                <input type="text" class="form-control" name="notes" placeholder="Catatan">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-action">💾 Buat Invoice</button>
+                    </form>
+                </div>
+
+                <div class="table-section">
+                    <h4>📋 Daftar Invoice</h4>
+                    <div id="invoiceList"></div>
+                </div>
+            </div>
+
+            <!-- INVENTORY TAB -->
+            <div class="tab-pane fade" id="inventory">
+                <div class="table-section">
+                    <h4>📦 Status Inventory Realtime</h4>
+                    <div id="inventoryList"></div>
+                </div>
+
+                <div class="table-section">
+                    <h4>📊 Inventory Movements (Perubahan Stok)</h4>
+                    <div id="movementsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_BASE = '/api/commerce';
+        let products = [];
+        let salesOrders = [];
+        let purchaseOrders = [];
+        let invoices = [];
+
+        // Load initial data
+        async function loadAllData() {
+            await loadProducts();
+            await loadSalesOrders();
+            await loadPurchaseOrders();
+            await loadInvoices();
+            updateDashboard();
+            populateSelects();
+        }
+
+        // Load products for selects
+        async function loadProducts() {
+            try {
+                const response = await fetch('/api/inventory/products');
+                const data = await response.json();
+                if (data.status === 'success') {
+                    products = data.data || [];
+                }
+            } catch (e) {
+                console.error('Error loading products:', e);
+            }
+        }
+
+        // Populate product selects
+        function populateSelects() {
+            const salesSelect = document.getElementById('salesProduct');
+            const purchaseSelect = document.getElementById('purchaseProduct');
+            const salesOrderSelect = document.getElementById('invoiceSalesOrder');
+
+            [salesSelect, purchaseSelect].forEach(select => {
+                select.innerHTML = '<option value="">Pilih Produk...</option>';
+                products.forEach(p => {
+                    select.innerHTML += `<option value="${p.id}">${p.name} (Rp ${p.list_price})</option>`;
+                });
+            });
+
+            salesOrderSelect.innerHTML = '<option value="">Pilih Sales Order...</option>';
+            salesOrders.forEach(so => {
+                salesOrderSelect.innerHTML += `<option value="${so.id}">${so.order_number} - ${so.customer_name}</option>`;
+            });
+        }
+
+        // Create Sales Order
+        async function createSalesOrder(e) {
+            e.preventDefault();
+            const form = e.target;
+            const product_id = document.getElementById('salesProduct').value;
+            const quantity = form.quantity.value;
+
+            const payload = {
+                order_number: form.order_number.value,
+                customer_name: form.customer_name.value,
+                order_date: form.order_date.value || new Date().toISOString().split('T')[0],
+                items: [{
+                    product_id: parseInt(product_id),
+                    quantity: parseFloat(quantity)
+                }],
+                notes: form.notes.value,
+                sync_odoo: false
+            };
+
+            try {
+                const response = await fetch(API_BASE + '/sales/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    let message = '✅ Sales Order berhasil dibuat!';
+                    if (data.data && data.data.invoice) {
+                        message += `\n📄 Invoice ${data.data.invoice.invoice_number} otomatis dibuat!`;
+                    }
+                    alert(message);
+                    form.reset();
+                    await loadSalesOrders();
+                    await loadInvoices(); // Refresh invoice list
+                    updateDashboard();
+                    populateSelects(); // Update dropdown sales order di form invoice
+                } else {
+                    alert('❌ Error: ' + data.message);
+                }
+            } catch (err) {
+                alert('❌ Error: ' + err.message);
+            }
+        }
+
+        // Create Purchase Order
+        async function createPurchaseOrder(e) {
+            e.preventDefault();
+            const form = e.target;
+            const product_id = document.getElementById('purchaseProduct').value;
+            const quantity = form.quantity.value;
+
+            const payload = {
+                order_number: form.order_number.value,
+                supplier_name: form.supplier_name.value,
+                order_date: form.order_date.value || new Date().toISOString().split('T')[0],
+                items: [{
+                    product_id: parseInt(product_id),
+                    quantity: parseFloat(quantity)
+                }],
+                notes: form.notes.value,
+                sync_odoo: false
+            };
+
+            try {
+                const response = await fetch(API_BASE + '/purchase/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    let message = '✅ Purchase Order berhasil dibuat!';
+                    if (data.data && data.data.invoice) {
+                        message += `\n📄 Invoice ${data.data.invoice.invoice_number} otomatis dibuat!`;
+                    }
+                    alert(message);
+                    form.reset();
+                    await loadPurchaseOrders();
+                    await loadInvoices(); // Refresh invoice list
+                    updateDashboard();
+                } else {
+                    alert('❌ Error: ' + data.message);
+                }
+            } catch (err) {
+                alert('❌ Error: ' + err.message);
+            }
+        }
+
+        // Create Invoice
+        async function createInvoice(e) {
+            e.preventDefault();
+            const form = e.target;
+
+            const payload = {
+                invoice_number: form.invoice_number.value,
+                invoice_date: form.invoice_date.value || new Date().toISOString().split('T')[0],
+                total_amount: parseFloat(form.total_amount.value),
+                tax_amount: parseFloat(form.tax_amount.value || 0),
+                sales_order_id: form.sales_order_id.value ? parseInt(form.sales_order_id.value) : null,
+                notes: form.notes.value,
+                sync_odoo: false
+            };
+
+            try {
+                const response = await fetch(API_BASE + '/invoices/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    alert('✅ Invoice berhasil dibuat!');
+                    form.reset();
+                    await loadInvoices();
+                    updateDashboard();
+                } else {
+                    alert('❌ Error: ' + data.message);
+                }
+            } catch (err) {
+                alert('❌ Error: ' + err.message);
+            }
+        }
+
+        // Load Sales Orders
+        async function loadSalesOrders() {
+            try {
+                const response = await fetch(API_BASE + '/sales');
+                const data = await response.json();
+                if (data.status === 'success') {
+                    salesOrders = data.data || [];
+                    renderSalesList();
+                }
+            } catch (e) {
+                console.error('Error loading sales orders:', e);
+            }
+        }
+
+        // Load Purchase Orders
+        async function loadPurchaseOrders() {
+            try {
+                const response = await fetch(API_BASE + '/purchase');
+                const data = await response.json();
+                if (data.status === 'success') {
+                    purchaseOrders = data.data || [];
+                    renderPurchaseList();
+                }
+            } catch (e) {
+                console.error('Error loading purchase orders:', e);
+            }
+        }
+
+        // Load Invoices
+        async function loadInvoices() {
+            try {
+                const response = await fetch(API_BASE + '/invoices');
+                const data = await response.json();
+                if (data.status === 'success') {
+                    invoices = data.data || [];
+                    renderInvoicesList();
+                }
+            } catch (e) {
+                console.error('Error loading invoices:', e);
+            }
+        }
+
+        // Render Sales List
+        function renderSalesList() {
+            const container = document.getElementById('salesList');
+            if (salesOrders.length === 0) {
+                container.innerHTML = '<p class="text-muted">Belum ada sales order</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr><th>Nomor</th><th>Customer</th><th>Total</th><th>Status</th><th>Item</th></tr></thead><tbody>';
+            salesOrders.forEach(so => {
+                html += `<tr>
+                    <td>${so.order_number}</td>
+                    <td>${so.customer_name}</td>
+                    <td>Rp ${parseFloat(so.total_amount).toLocaleString('id-ID')}</td>
+                    <td><span class="badge badge-${so.status}">${so.status.toUpperCase()}</span></td>
+                    <td>${so.items_count} item</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Render Purchase List
+        function renderPurchaseList() {
+            const container = document.getElementById('purchaseList');
+            if (purchaseOrders.length === 0) {
+                container.innerHTML = '<p class="text-muted">Belum ada purchase order</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr><th>Nomor</th><th>Supplier</th><th>Total</th><th>Status</th><th>Item</th><th>Aksi</th></tr></thead><tbody>';
+            purchaseOrders.forEach(po => {
+                html += `<tr>
+                    <td>${po.order_number}</td>
+                    <td>${po.supplier_name}</td>
+                    <td>Rp ${parseFloat(po.total_amount).toLocaleString('id-ID')}</td>
+                    <td><span class="badge badge-${po.status}">${po.status.toUpperCase()}</span></td>
+                    <td>${po.items_count} item</td>
+                    <td>
+                        ${po.status === 'draft' ? `<button class="btn-action btn-success" onclick="confirmPO(${po.id})">✓ Confirm</button>` : ''}
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Render Invoices List
+        function renderInvoicesList() {
+            const container = document.getElementById('invoiceList');
+            if (invoices.length === 0) {
+                container.innerHTML = '<p class="text-muted">Belum ada invoice</p>';
+                return;
+            }
+
+            let html = '<table class="invoice-table"><thead><tr><th>📄 Nomor Invoice</th><th>📅 Tanggal</th><th>📋 Tipe</th><th>👤 Customer/Supplier</th><th>💰 Total</th><th>🏛️ Pajak</th><th>✓ Status</th></tr></thead><tbody>';
+            invoices.forEach(inv => {
+                const refType = inv.reference_type || '-';
+                const partnerName = inv.partner_name || inv.customer_name || inv.supplier_name || '-';
+                const badgeClass = inv.reference_type === 'Sales Order' ? 'badge-done' : 'badge-confirmed';
+                const statusBadgeClass = `badge-${inv.status}`;
+                
+                html += `<tr>
+                    <td><strong>${inv.invoice_number}</strong>${inv.reference ? '<br><small style="color:#999;">' + inv.reference + '</small>' : ''}</td>
+                    <td>${inv.invoice_date}</td>
+                    <td><span class="badge ${badgeClass}">${refType}</span></td>
+                    <td><strong style="color: var(--primary);">${partnerName}</strong></td>
+                    <td>Rp ${parseFloat(inv.total_amount).toLocaleString('id-ID')}</td>
+                    <td>Rp ${parseFloat(inv.tax_amount || 0).toLocaleString('id-ID')}</td>
+                    <td><span class="badge ${statusBadgeClass}">${inv.status.toUpperCase()}</span></td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Confirm Purchase Order
+        async function confirmPO(id) {
+            try {
+                const response = await fetch(`${API_BASE}/purchase/confirm/${id}`, { method: 'POST' });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    alert('✅ PO confirmed dan inventory updated!');
+                    await loadPurchaseOrders();
+                    await loadProducts();
+                    updateDashboard();
+                } else {
+                    alert('❌ Error: ' + data.message);
+                }
+            } catch (err) {
+                alert('❌ Error: ' + err.message);
+            }
+        }
+
+        // Update Dashboard
+        function updateDashboard() {
+            document.getElementById('totalSales').textContent = salesOrders.length;
+            document.getElementById('totalPurchase').textContent = purchaseOrders.length;
+            document.getElementById('totalInvoices').textContent = invoices.length;
+            document.getElementById('totalProducts').textContent = products.filter(p => p.quantity_on_hand > 0).length;
+        }
+
+        // Load inventory
+        function renderInventory() {
+            const container = document.getElementById('inventoryList');
+            if (products.length === 0) {
+                container.innerHTML = '<p class="text-muted">Belum ada produk</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr><th>Produk</th><th>Kode</th><th>Stok</th><th>Harga</th><th>Total Value</th></tr></thead><tbody>';
+            products.forEach(p => {
+                const totalValue = p.quantity_on_hand * p.list_price;
+                html += `<tr>
+                    <td>${p.name}</td>
+                    <td>${p.code || '-'}</td>
+                    <td>${parseFloat(p.quantity_on_hand)} ${p.uom || 'unit'}</td>
+                    <td>Rp ${parseFloat(p.list_price).toLocaleString('id-ID')}</td>
+                    <td>Rp ${parseFloat(totalValue).toLocaleString('id-ID')}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Initial load
+        window.addEventListener('load', () => {
+            loadAllData();
+            setInterval(loadAllData, 10000); // Refresh every 10 seconds
+        });
+
+        // When inventory tab is clicked
+        document.querySelector('[data-bs-target="#inventory"]').addEventListener('click', () => {
+            renderInventory();
+        });
+    </script>
+</body>
+</html>

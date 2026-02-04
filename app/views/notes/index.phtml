@@ -1,6 +1,27 @@
 <div class="row">
     <div class="col-md-7 mx-auto">
 
+        <!-- TABS NAVIGATION -->
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="notes-tab" data-bs-toggle="tab" 
+                        data-bs-target="#notes-pane" type="button" role="tab">
+                    📝 Catatan Lokal
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="odoo-tab" data-bs-toggle="tab" 
+                        data-bs-target="#odoo-pane" type="button" role="tab">
+                    🔗 Data Odoo
+                </button>
+            </li>
+        </ul>
+
+        <!-- TAB CONTENT -->
+        <div class="tab-content">
+            <!-- NOTES TAB -->
+            <div class="tab-pane fade show active" id="notes-pane" role="tabpanel">
+
         <!-- FORM -->
         <div class="card mb-4 border-0 shadow-lg">
             <div class="card-header text-white fw-semibold"
@@ -63,5 +84,307 @@
             <?php endforeach; ?>
         </div>
 
+            </div>
+
+            <!-- ODOO TAB -->
+            <div class="tab-pane fade" id="odoo-pane" role="tabpanel">
+                <div class="card border-0 shadow-lg">
+                    <div class="card-header text-white fw-semibold"
+                         style="background: linear-gradient(90deg,#ea580c,#f97316);">
+                        🔗 Integrasi Odoo
+                    </div>
+
+                    <div class="card-body">
+                        <!-- Status Odoo -->
+                        <div class="mb-3">
+                            <button class="btn btn-outline-info w-100" id="btnTestConnection">
+                                🔍 Test Koneksi Odoo
+                            </button>
+                        </div>
+
+                        <div id="odooStatus" class="alert alert-info" style="display:none;"></div>
+
+                        <!-- Tabs untuk Odoo Data -->
+                        <ul class="nav nav-pills nav-fill mb-3" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="partners-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#partners-pane" type="button" role="tab">
+                                    👥 Partners
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="orders-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#orders-pane" type="button" role="tab">
+                                    📦 Sales Orders
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="create-tab" data-bs-toggle="pill" 
+                                        data-bs-target="#create-pane" type="button" role="tab">
+                                    ➕ Buat Partner
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Odoo Data Tabs Content -->
+                        <div class="tab-content">
+                            <!-- Partners Tab -->
+                            <div class="tab-pane fade show active" id="partners-pane" role="tabpanel">
+                                <div class="d-grid gap-2 mb-3">
+                                    <button class="btn btn-primary" id="btnFetchPartners">
+                                        🔄 Muat Partners
+                                    </button>
+                                </div>
+                                <div id="partnersDataContainer" class="odoo-data-container"></div>
+                            </div>
+
+                            <!-- Sales Orders Tab -->
+                            <div class="tab-pane fade" id="orders-pane" role="tabpanel">
+                                <div class="d-grid gap-2 mb-3">
+                                    <button class="btn btn-success" id="btnFetchOrders">
+                                        🔄 Muat Sales Orders
+                                    </button>
+                                </div>
+                                <div id="ordersDataContainer" class="odoo-data-container"></div>
+                            </div>
+
+                            <!-- Create Partner Tab -->
+                            <div class="tab-pane fade" id="create-pane" role="tabpanel">
+                                <form id="createPartnerForm" class="mt-3">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nama Partner</label>
+                                        <input type="text" name="name" class="form-control" 
+                                               placeholder="Nama lengkap" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" name="email" class="form-control" 
+                                               placeholder="email@example.com" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Phone</label>
+                                        <input type="tel" name="phone" class="form-control" 
+                                               placeholder="Nomor telepon">
+                                    </div>
+                                    <button type="submit" class="btn btn-success w-100">
+                                        ➕ Buat Partner di Odoo
+                                    </button>
+                                </form>
+                                <div id="createResultContainer" class="mt-3"></div>
+                            </div>
+                        </div>
+
+                        <!-- Loading spinner -->
+                        <div id="loadingSpinner" class="text-center" style="display:none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
     </div>
 </div>
+
+<!-- JavaScript untuk Odoo Integration -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Test Connection
+    document.getElementById('btnTestConnection').addEventListener('click', function() {
+        testOdooConnection();
+    });
+
+    // Fetch Partners
+    document.getElementById('btnFetchPartners').addEventListener('click', function() {
+        fetchOdooData('/api/odoo/partners', 'partnersDataContainer');
+    });
+
+    // Fetch Sales Orders
+    document.getElementById('btnFetchOrders').addEventListener('click', function() {
+        fetchOdooData('/api/odoo/sales-orders', 'ordersDataContainer');
+    });
+
+    // Create Partner Form
+    document.getElementById('createPartnerForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        createOdooPartner();
+    });
+});
+
+function testOdooConnection() {
+    const statusDiv = document.getElementById('odooStatus');
+    const spinner = document.getElementById('loadingSpinner');
+    
+    spinner.style.display = 'block';
+    statusDiv.style.display = 'none';
+
+    fetch('/api/odoo/test')
+        .then(response => response.json())
+        .then(data => {
+            spinner.style.display = 'none';
+            
+            if (data.status === 'success') {
+                statusDiv.className = 'alert alert-success';
+                statusDiv.innerHTML = `
+                    <strong>✅ Koneksi Berhasil!</strong><br>
+                    <small>Database: <code>${data.database}</code> | UID: <code>${data.uid}</code></small>
+                `;
+            } else {
+                statusDiv.className = 'alert alert-danger';
+                statusDiv.innerHTML = `<strong>❌ Error:</strong> ${data.message || data.error}`;
+            }
+            statusDiv.style.display = 'block';
+        })
+        .catch(error => {
+            spinner.style.display = 'none';
+            statusDiv.className = 'alert alert-danger';
+            statusDiv.innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+            statusDiv.style.display = 'block';
+        });
+}
+
+function fetchOdooData(endpoint, containerId) {
+    const container = document.getElementById(containerId);
+    const spinner = document.getElementById('loadingSpinner');
+    
+    spinner.style.display = 'block';
+    container.innerHTML = '';
+
+    fetch(endpoint)
+        .then(response => response.json())
+        .then(data => {
+            spinner.style.display = 'none';
+            
+            if (!data.status) {
+                container.innerHTML = `<div class="alert alert-danger"><strong>❌ Error:</strong> ${data.error}</div>`;
+                return;
+            }
+
+            if (!data.data || data.data.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">Tidak ada data</div>';
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table table-sm table-hover table-striped">';
+            
+            // Get keys dari first item
+            const firstItem = data.data[0];
+            const keys = Object.keys(firstItem).slice(0, 5); // Tampilkan 5 kolom pertama
+            
+            // Header
+            html += '<thead class="table-light"><tr>';
+            keys.forEach(key => {
+                html += `<th>${key}</th>`;
+            });
+            html += '</tr></thead>';
+            
+            // Body
+            html += '<tbody>';
+            data.data.forEach((item, index) => {
+                html += `<tr class="${index % 2 === 0 ? '' : 'table-light'}">`;
+                keys.forEach(key => {
+                    let value = item[key];
+                    if (typeof value === 'object') {
+                        value = JSON.stringify(value);
+                    }
+                    if (typeof value === 'boolean') {
+                        value = value ? '✅' : '❌';
+                    }
+                    value = String(value).substring(0, 50);
+                    html += `<td><small>${value}</small></td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+            
+            // Summary
+            html += `<div class="alert alert-info mt-2"><small>Total: <strong>${data.data.length}</strong> records</small></div>`;
+            
+            container.innerHTML = html;
+        })
+        .catch(error => {
+            spinner.style.display = 'none';
+            container.innerHTML = `<div class="alert alert-danger"><strong>❌ Error:</strong> ${error.message}</div>`;
+        });
+}
+
+function createOdooPartner() {
+    const form = document.getElementById('createPartnerForm');
+    const formData = new FormData(form);
+    const resultDiv = document.getElementById('createResultContainer');
+    const spinner = document.getElementById('loadingSpinner');
+
+    const payload = {
+        model: 'res.partner',
+        values: {
+            name: formData.get('name'),
+            email: formData.get('email'),
+            phone: formData.get('phone')
+        }
+    };
+
+    spinner.style.display = 'block';
+    resultDiv.innerHTML = '';
+
+    fetch('/api/odoo/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        spinner.style.display = 'none';
+        
+        if (data.status) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>✅ Berhasil!</strong><br>
+                    ${data.message}<br>
+                    <small>ID: <code>${data.id}</code></small>
+                </div>
+            `;
+            form.reset();
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>❌ Error:</strong> ${data.error}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        spinner.style.display = 'none';
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <strong>❌ Error:</strong> ${error.message}
+            </div>
+        `;
+    });
+}
+</script>
+
+<style>
+.odoo-data-container {
+    max-height: 500px;
+    overflow-y: auto;
+    border-radius: 0.375rem;
+}
+
+.nav-pills .nav-link {
+    border-radius: 0.375rem;
+    font-size: 0.9rem;
+}
+
+.nav-pills .nav-link.active {
+    background: linear-gradient(90deg, #ea580c, #f97316);
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f5f7ff !important;
+}
+</style>

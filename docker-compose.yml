@@ -51,7 +51,7 @@ services:
       - odoo_db_data:/var/lib/postgresql/data
 
   odoo:
-    image: odoo:17
+    image: odoo:19
     container_name: ujicoba_odoo
     ports:
       - "8077:8069"
@@ -65,7 +65,8 @@ services:
       - odoo_data:/var/lib/odoo
     depends_on:
       - odoo_db
-    command: odoo -d odoo -i base --without-demo=all
+    # Install modules: base, sales, purchase, account (invoicing), stock (inventory)
+    command: odoo -d odoo -i base,sale,purchase,account,stock --without-demo=all --db_port=5432
 
 volumes:
   odoo_db_data:

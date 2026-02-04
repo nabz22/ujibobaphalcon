@@ -1,0 +1,173 @@
+/* Main Styling */
+:root {
+    --primary-color: #4f46e5;
+    --primary-dark: #6366f1;
+    --odoo-color: #ea580c;
+    --odoo-dark: #f97316;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Navigation Tabs */
+.nav-tabs {
+    border-bottom: 2px solid #e9ecef;
+}
+
+.nav-tabs .nav-link {
+    color: #6c757d;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    background-color: transparent;
+    border-bottom-color: var(--primary-color);
+}
+
+/* Card Styling */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 1.25rem;
+}
+
+/* Buttons */
+.btn {
+    font-weight: 500;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(90deg, #10b981, #059669);
+    border: none;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+}
+
+/* Alert Styling */
+.alert {
+    border-radius: 0.5rem;
+    border: none;
+}
+
+.alert-success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.alert-danger {
+    background-color: #fee2e2;
+    color: #7f1d1d;
+}
+
+.alert-info {
+    background-color: #dbeafe;
+    color: #0c2d6b;
+}
+
+/* Table Styling */
+.table {
+    border-collapse: collapse;
+}
+
+.table thead {
+    background-color: #f3f4f6;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* Loading Spinner */
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .col-md-6 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .nav-link {
+        font-size: 0.9rem;
+    }
+}
+
+/* Tab Pane Animation */
+.tab-pane {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Odoo Tab Specific */
+#odoo-pane .card-header {
+    background: linear-gradient(90deg, var(--odoo-color), var(--odoo-dark)) !important;
+}
+
+#odoo-pane .btn-outline-info {
+    color: #0dcaf0;
+    border-color: #0dcaf0;
+}
+
+#odoo-pane .btn-outline-info:hover {
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+    color: #fff;
+}
+
+/* Data Container */
+#odooDataContainer {
+    margin-top: 1.5rem;
+}
+
+#odooDataContainer .table-responsive {
+    border-radius: 0.5rem;
+    border: 1px solid #e9ecef;
+}

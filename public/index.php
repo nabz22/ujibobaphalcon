@@ -13,12 +13,12 @@ try {
      * The FactoryDefault Dependency Injector automatically registers
      * the services that provide a full stack framework.
      */
-    $di = new FactoryDefault();
+    //$di = new FactoryDefault();
 
     /**
      * Read services
      */
-    include APP_PATH . '/config/services.php';
+    $di = include APP_PATH . '/config/services.php';
 
     /**
      * Handle routes

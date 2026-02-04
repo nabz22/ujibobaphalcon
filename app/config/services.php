@@ -4,7 +4,10 @@ use Phalcon\Di\FactoryDefault;
 use Phalcon\Db\Adapter\Pdo\Mysql;
 use Phalcon\Mvc\View;
 
-$di = new FactoryDefault();
+// If $di not provided, create new one
+if (!isset($di)) {
+    $di = new FactoryDefault();
+}
 
 /**
  * Database
@@ -33,3 +36,6 @@ $view->setLayout('main');
 });
 
 return $di;
+
+// REMOVED: explicit router service - let Phalcon use default
+// This was causing conflicts
