@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Vendors dari Odoo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -18,6 +21,8 @@
             padding: 30px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
         .header-section {
             display: flex;
@@ -48,8 +53,11 @@
             padding: 10px 25px;
             border-radius: 8px;
             font-weight: 600;
-            cursor: pointer;
+            cursor: pointer !important;
             transition: all 0.3s;
+            position: relative;
+            z-index: 10;
+            pointer-events: auto !important;
         }
         .btn-tambah:hover {
             background: #5568d3;
@@ -61,6 +69,8 @@
             border-radius: 12px;
             padding: 25px;
             margin-bottom: 20px;
+            position: relative;
+            z-index: 0;
         }
         .section-title {
             display: flex;
@@ -305,6 +315,13 @@
     </style>
 </head>
 <body>
+    <!-- Error Alert Box -->
+    <div id="errorAlertBox" style="display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #dc3545; color: white; padding: 20px 30px; border-radius: 10px; z-index: 9999; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-width: 600px; text-align: center;">
+        <h4 style="margin: 0 0 10px 0;">⚠️ Error</h4>
+        <p id="errorMessage" style="margin: 0;"></p>
+        <button onclick="document.getElementById('errorAlertBox').style.display='none'" style="margin-top: 10px; padding: 5px 15px; background: white; color: #dc3545; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Close</button>
+    </div>
+    
     <div class="main-container">
         <div class="header-section">
             <div class="header-title">
@@ -376,27 +393,108 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <script>
+        // Base URL untuk API - gunakan window.location.origin untuk mendapatkan protocol + host
+        const API_BASE_URL = window.location.origin;
+        
+        // Define functions globally first
+        window.openAddVendorModal = function() {
+            console.log('Opening vendor modal...');
+            const modal = document.getElementById('addVendorModal');
+            if (modal) {
+                modal.style.display = 'block';
+                const form = document.getElementById('vendorForm');
+                if (form) form.reset();
+            } else {
+                console.error('Modal element not found!');
+            }
+        };
+
+        window.closeAddVendorModal = function() {
+            document.getElementById('addVendorModal').style.display = 'none';
+            document.getElementById('vendorForm').reset();
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, initializing...');
+            console.log('API Base URL:', API_BASE_URL);
+            
+            // Add event listener to button as backup
+            const addButton = document.querySelector('.btn-tambah');
+            if (addButton) {
+                console.log('Add button found, attaching listener');
+                addButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Button clicked!');
+                    openAddVendorModal();
+                });
+            } else {
+                console.error('Add button not found!');
+            }
+            
             loadVendors();
         });
 
         function loadVendors() {
-            fetch('/api/odoo/vendors')
-                .then(response => response.json())
+            console.log('Loading vendors from API...');
+            const container = document.getElementById('vendorTableContainer');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading vendors...</p></div>';
+            
+            const apiUrl = `${API_BASE_URL}/api/odoo/vendors`;
+            console.log('Fetching from:', apiUrl);
+            
+            fetch(apiUrl, {
+                method: 'GET',
+                cache: 'no-cache',
+                headers: {
+                    'Accept': 'application/json',
+                }
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    displayVendors(data.data || []);
+                    console.log('Vendors data received:', data);
+                    
+                    if (data.success === false) {
+                        showError(data.error || data.message || 'Failed to load vendors');
+                        throw new Error(data.error || data.message || 'Failed to load vendors');
+                    }
+                    
+                    if (!data.data || !Array.isArray(data.data)) {
+                        showError('Invalid data format received from server');
+                        throw new Error('Invalid data format');
+                    }
+                    
+                    displayVendors(data.data);
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('vendorTableContainer').innerHTML = 
-                        '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Error loading vendors</p></div>';
+                    console.error('Error loading vendors:', error);
+                    showError(`Error loading vendors: ${error.message}`);
+                    container.innerHTML =
+                        `<div class="empty-state">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <p>Error loading vendors: ${error.message}</p>
+                            <button class="btn-tambah" onclick="loadVendors()" style="margin-top: 10px;">🔄 Retry</button>
+                        </div>`;
                 });
         }
-
-        function displayVendors(vendors) {
-            const container = document.getElementById('vendorTableContainer');
+        
+        function showError(message) {
+            const errorBox = document.getElementById('errorAlertBox');
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorBox.style.display = 'block';
             
-            if (vendors.length === 0) {
+            // Auto hide after 10 seconds
+            setTimeout(() => {
+                errorBox.style.display = 'none';
+            }, 10000);
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Tidak ada vendors</p></div>';
                 return;
             }
@@ -407,7 +505,7 @@
                 html += `<tr>
                     <td>${vendor.id || '-'}</td>
                     <td><strong>${vendor.name || '-'}</strong></td>
-                    <td>${vendor.reference || '-'}</td>
+                    <td>${vendor.ref || vendor.reference || '-'}</td>
                     <td>${vendor.email || '-'}</td>
                     <td>${vendor.phone || '-'}</td>
                     <td>${vendor.city || '-'}</td>
@@ -417,17 +515,7 @@
             
             html += '</tbody></table>';
             container.innerHTML = html;
-        }
-
-        function openAddVendorModal() {
-            document.getElementById('addVendorModal').style.display = 'block';
-            document.getElementById('vendorForm').reset();
-        }
-
-        function closeAddVendorModal() {
-            document.getElementById('addVendorModal').style.display = 'none';
-            document.getElementById('vendorForm').reset();
-        }
+        
 
         function addVendor(event) {
             event.preventDefault();
@@ -436,12 +524,12 @@
                 name: document.getElementById('vendorName').value,
                 email: document.getElementById('vendorEmail').value,
                 phone: document.getElementById('vendorPhone').value,
-                address: document.getElementById('vendorAddress').value,
+                street: document.getElementById('vendorAddress').value,
                 city: document.getElementById('vendorCity').value,
                 is_company: document.getElementById('vendorIsCompany').checked
             };
 
-            fetch('/api/odoo/vendors', {
+            fetch(`${API_BASE_URL}/api/odoo/vendors`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -450,8 +538,8 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    alert('Vendor berhasil ditambahkan');
+                if (data.success || data.status === 'success') {
+                    alert('Vendor berhasil ditambahkan!');
                     closeAddVendorModal();
                     loadVendors();
                 } else {
@@ -460,13 +548,13 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error menambahkan vendor');
+                alert('Error menambahkan vendor: ' + error.message);
             });
         }
 
         function deleteVendor(vendorId) {
             if (confirm('Apakah Anda yakin ingin menghapus vendor ini?')) {
-                fetch(`/api/odoo/vendors/${vendorId}`, {
+                fetch(`${API_BASE_URL}/api/odoo/vendors/${vendorId}`, {
                     method: 'DELETE'
                 })
                 .then(response => response.json())
@@ -489,12 +577,15 @@
         window.onclick = function(event) {
             const modal = document.getElementById('addVendorModal');
             if (event.target === modal) {
-                modal.style.display = 'none';
+                closeAddVendorModal();
             }
         }
 
-        // Submit form
-        document.getElementById('vendorForm').addEventListener('submit', addVendor);
+        // Submit form - ensure this is attached after DOM is loaded
+        const vendorForm = document.getElementById('vendorForm');
+        if (vendorForm) {
+            vendorForm.addEventListener('submit', addVendor);
+        }
     </script>
 </body>
 </html>

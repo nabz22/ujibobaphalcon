@@ -1898,7 +1898,20 @@ class ApiController extends Controller
 
             if ($this->request->isGet()) {
                 $result = $this->odooService->getVendors(50);
-                return $this->response->setJsonContent($result);
+                
+                // Normalize response format
+                if (isset($result['success']) && $result['success']) {
+                    return $this->response->setJsonContent([
+                        'status' => 'success',
+                        'data' => $result['data'] ?? [],
+                        'count' => $result['count'] ?? 0
+                    ]);
+                } else {
+                    return $this->response->setStatusCode(400)->setJsonContent([
+                        'status' => 'error',
+                        'message' => $result['error'] ?? 'Failed to load vendors'
+                    ]);
+                }
             }
 
             return $this->response->setStatusCode(405)->setJsonContent([

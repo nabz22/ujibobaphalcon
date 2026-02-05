@@ -560,7 +560,7 @@ class OdooService
                 'name' => $vendorData['name'] ?? '',
                 'email' => $vendorData['email'] ?? '',
                 'phone' => $vendorData['phone'] ?? '',
-                'street' => $vendorData['address'] ?? '',
+                'street' => $vendorData['street'] ?? $vendorData['address'] ?? '',
                 'city' => $vendorData['city'] ?? '',
                 'is_company' => $vendorData['is_company'] ?? false,
                 'supplier_rank' => 1  // Mark as supplier
@@ -594,7 +594,7 @@ class OdooService
         try {
             error_log('[OdooService] Deleting vendor: ' . $vendorId);
             
-            $this->unlink('res.partner', [$vendorId]);
+            $this->delete('res.partner', [$vendorId]);
             
             error_log('[OdooService] Vendor deleted successfully');
             

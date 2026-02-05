@@ -264,7 +264,7 @@ $router->addPost('/api/odoo/customers', [
     'action'     => 'customersCreate',
 ]);
 
-$router->addDelete('/api/odoo/customers/:id', [
+$router->addDelete('/api/odoo/customers/{id:[0-9]+}', [
     'controller' => 'api',
     'action'     => 'customersDelete',
 ]);

@@ -611,8 +611,17 @@
         let customersData = [];
         let vendorsData = [];
 
-        // Initialize
-        window.addEventListener('load', () => {
+        // Forward declarations for modal functions (defined later in the file)
+        let showCustomerModal;
+        let showVendorModal;
+        let loadCustomersFromOdoo;
+        let loadVendorsFromOdoo;
+        let filterCustomers;
+        let filterVendors;
+
+        // Initialize - Use DOMContentLoaded for better compatibility
+        function initializeApp() {
+            console.log('[INIT] Starting app initialization...');
             loadNotes();
             loadProducts();
             loadSalesOrders();
@@ -620,12 +629,50 @@
             loadInvoices();
             loadCustomersForDropdown();
             loadVendorsForDropdown();
+            
+            // Load the table display versions after a short delay
+            setTimeout(() => {
+                console.log('[INIT] Loading table data...');
+                if (typeof loadCustomersFromOdoo === 'function') {
+                    console.log('[INIT] Calling loadCustomersFromOdoo');
+                    loadCustomersFromOdoo();
+                } else {
+                    console.error('[INIT] loadCustomersFromOdoo not found');
+                }
+                
+                if (typeof loadVendorsFromOdoo === 'function') {
+                    console.log('[INIT] Calling loadVendorsFromOdoo');
+                    loadVendorsFromOdoo();
+                } else {
+                    console.error('[INIT] loadVendorsFromOdoo not found');
+                }
+            }, 200);
+            
             setInterval(() => {
                 loadProducts();
                 loadSalesOrders();
                 loadPurchaseOrders();
                 loadInvoices();
             }, 10000);
+        }
+
+        // Try multiple approaches to ensure initialization
+        if (document.readyState === 'loading') {
+            // DOM is still loading
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            // DOM is already loaded
+            initializeApp();
+        }
+        
+        // Fallback to window.load
+        window.addEventListener('load', () => {
+            console.log('[INIT] Window load event');
+            // Re-ensure vendors are loaded
+            if (vendorsData.length === 0 && typeof loadVendorsFromOdoo === 'function') {
+                console.log('[INIT] Window load: vendors empty, reloading');
+                loadVendorsFromOdoo();
+            }
         });
 
         // Load Customers for Sales dropdown
@@ -1556,9 +1603,8 @@
         }
 
         // ===== CUSTOMERS FUNCTIONS =====
-        let customersData = [];
 
-        async function loadCustomersFromOdoo() {
+        loadCustomersFromOdoo = async function() {
             try {
                 console.log('Loading customers from Odoo...');
                 const response = await fetch('/api/odoo/customers');
@@ -1600,7 +1646,7 @@
             `).join('');
         }
 
-        function filterCustomers() {
+        filterCustomers = function() {
             const searchInput = document.getElementById('customerSearch').value.toLowerCase();
             const filteredCustomers = customersData.filter(customer =>
                 (customer.name && customer.name.toLowerCase().includes(searchInput)) ||
@@ -1628,7 +1674,7 @@
             `).join('');
         }
 
-        function showCustomerModal() {
+        showCustomerModal = function() {
             const modalHtml = `
                 <div id="customerModal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; overflow: auto;">
                     <div style="margin: 50px auto; max-width: 500px; position: relative;">
@@ -1750,11 +1796,7 @@
             }
         }
 
-        // Load customers and vendors on page load
-        window.addEventListener('load', function() {
-            loadCustomersFromOdoo();
-            loadVendorsFromOdoo();
-        });
+
 
         async function deleteInventoryProduct(productId) {
             if (!confirm('Yakin ingin menghapus produk ini dari inventory?')) {
@@ -1791,7 +1833,7 @@
         }
 
         // VENDORS FUNCTIONS
-        function showVendorModal() {
+        showVendorModal = function() {
             const modalHtml = `
                 <div id="vendorModal" style="display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; overflow: auto;">
                     <div style="margin: 50px auto; max-width: 500px; position: relative;">
@@ -1889,18 +1931,23 @@
             }
         }
 
-        async function loadVendorsFromOdoo() {
+        loadVendorsFromOdoo = async function() {
             try {
-                console.log('Loading vendors from Odoo...');
+                console.log('[VENDOR] Loading vendors from Odoo...');
                 const response = await fetch('/api/odoo/vendors');
                 const result = await response.json();
                 
+                console.log('[VENDOR] API response:', result);
+                
                 if (result.status === 'success') {
                     vendorsData = result.data || [];
+                    console.log('[VENDOR] Loaded vendors count:', vendorsData.length);
                     renderVendors();
                     populateVendorDropdown(); // Update dropdown juga
+                    console.log('[VENDOR] Vendors rendered successfully');
                     alert('✅ Vendors berhasil disync dari Odoo!');
                 } else {
+                    console.error('[VENDOR] API error:', result);
                     alert('❌ ' + (result.message || 'Gagal load vendors'));
                 }
             } catch (error) {
@@ -1910,13 +1957,21 @@
         }
 
         function renderVendors() {
+            console.log('[VENDOR-RENDER] Starting renderVendors, vendorsData length:', vendorsData.length);
             const tbody = document.getElementById('vendorsTableBody');
             
+            if (!tbody) {
+                console.error('[VENDOR-RENDER] vendorsTableBody element not found!');
+                return;
+            }
+            
             if (vendorsData.length === 0) {
+                console.log('[VENDOR-RENDER] No vendors data, showing empty message');
                 tbody.innerHTML = '<tr><td colspan="7" style="padding: 15px; text-align: center; color: #999;">Belum ada vendors. Klik "Sync Vendors dari Odoo" untuk memuat data.</td></tr>';
                 return;
             }
 
+            console.log('[VENDOR-RENDER] Rendering', vendorsData.length, 'vendors');
             tbody.innerHTML = vendorsData.map(vendor => `
                 <tr>
                     <td style="padding: 10px; border-bottom: 1px solid #ddd;">${vendor.id || '-'}</td>
@@ -1932,7 +1987,7 @@
             `).join('');
         }
 
-        function filterVendors() {
+        filterVendors = function() {
             const searchInput = document.getElementById('vendorSearch').value.toLowerCase();
             const filteredVendors = vendorsData.filter(vendor =>
                 (vendor.name && vendor.name.toLowerCase().includes(searchInput)) ||
@@ -1974,7 +2029,10 @@
                 
                 if (result.status === 'success') {
                     alert('✅ Vendor berhasil dihapus!');
-                    loadVendorsFromOdoo();
+                    // Immediately remove from vendorsData and re-render
+                    vendorsData = vendorsData.filter(v => v.id !== vendorId);
+                    renderVendors();
+                    populateVendorDropdown();
                 } else {
                     alert('❌ ' + (result.message || 'Gagal menghapus vendor'));
                 }
