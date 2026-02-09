@@ -194,6 +194,11 @@ $router->addPost('/api/commerce/invoices/create', [
     'action'     => 'commerceInvoicesCreate',
 ]);
 
+$router->addPost('/api/commerce/invoices/confirm/{id:[0-9]+}', [
+    'controller' => 'api',
+    'action'     => 'commerceInvoicesConfirm',
+]);
+
 $router->addPost('/api/commerce/invoices/update/{id:[0-9]+}', [
     'controller' => 'api',
     'action'     => 'commerceInvoicesUpdate',

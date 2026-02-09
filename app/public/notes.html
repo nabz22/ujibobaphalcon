@@ -1098,9 +1098,28 @@
         async function createSalesOrder(e) {
             e.preventDefault();
             const form = e.target;
-            const product_id = document.getElementById('salesProduct').value;
+            const product_id = parseInt(document.getElementById('salesProduct').value);
+            const quantity = parseFloat(form.quantity.value);
             const customerSelect = document.getElementById('salesCustomer');
             const customerName = customerSelect.options[customerSelect.selectedIndex].text;
+
+            // Check stock availability
+            const product = allProducts.find(p => p.id === product_id);
+            if (!product) {
+                alert('❌ Produk tidak ditemukan');
+                return;
+            }
+
+            const availableStock = parseFloat(product.quantity_on_hand || 0);
+            if (availableStock <= 0) {
+                alert('⚠️ Peringatan: Stok produk ' + product.name + ' sedang kosong!');
+                return;
+            }
+
+            if (quantity > availableStock) {
+                alert('⚠️ Peringatan: Stok produk ' + product.name + ' hanya tersedia ' + availableStock + ' unit. Anda mencoba memesan ' + quantity + ' unit.');
+                return;
+            }
 
             const payload = {
                 order_number: form.order_number.value,
@@ -1108,8 +1127,8 @@
                 customer_name: customerName,
                 order_date: form.order_date.value || new Date().toISOString().split('T')[0],
                 items: [{
-                    product_id: parseInt(product_id),
-                    quantity: parseFloat(form.quantity.value)
+                    product_id: product_id,
+                    quantity: quantity
                 }]
             };
 
@@ -1343,7 +1362,7 @@
                 return;
             }
 
-            let html = '<table><thead><tr><th>Nomor</th><th>Supplier</th><th>Total</th><th>Status</th><th>Aksi</th></tr></thead><tbody>';
+            let html = '<table><thead><tr><th>Nomor</th><th>Supplier</th><th>Total</th><th>Status</th></tr></thead><tbody>';
             purchaseOrders.forEach(po => {
                 const status = po.status || 'draft';
                 html += `<tr>
@@ -1351,7 +1370,6 @@
                     <td>${po.supplier_name || '-'}</td>
                     <td>Rp ${parseFloat(po.total_amount || 0).toLocaleString('id-ID')}</td>
                     <td><span class="badge badge-${status}">${status.toUpperCase()}</span></td>
-                    <td>${status === 'draft' ? `<button class="btn-action btn-success" onclick="confirmPO(${po.id})">✓ Confirm</button>` : ''}</td>
                 </tr>`;
             });
             html += '</tbody></table>';
@@ -1359,21 +1377,23 @@
             console.log('Purchase list rendered successfully');
         }
 
-        async function confirmPO(id) {
+        async function confirmInvoice(id) {
             try {
-                const response = await fetch(`${API_BASE}/purchase/confirm/${id}`, { method: 'POST' });
+                const response = await fetch(`${API_BASE}/invoices/confirm/${id}`, { method: 'POST' });
                 if (!response.ok) {
-                    console.error('Confirm PO error:', response.status);
+                    console.error('Confirm Invoice error:', response.status);
                 }
                 const text = await response.text();
                 if (!text || text.startsWith('<')) {
                     alert('❌ Error: Server returned invalid response');
-                    console.error('Confirm PO returned HTML:', text.substring(0, 200));
+                    console.error('Confirm Invoice returned HTML:', text.substring(0, 200));
                     return;
                 }
                 const data = JSON.parse(text);
                 if (data.status === 'success') {
-                    alert('✅ PO confirmed!');
+                    alert('✅ Invoice confirmed!');
+                    loadInvoices();
+                    loadSalesOrders();
                     loadPurchaseOrders();
                     loadProducts();
                     updateDashboard();
@@ -1459,7 +1479,7 @@
                 return;
             }
 
-            let html = '<table><thead><tr><th>Nomor</th><th>Tanggal</th><th>Total</th><th>Status</th></tr></thead><tbody>';
+            let html = '<table><thead><tr><th>Nomor</th><th>Tanggal</th><th>Total</th><th>Status</th><th>Aksi</th></tr></thead><tbody>';
             invoices.forEach(inv => {
                 const status = inv.status || 'draft';
                 html += `<tr>
@@ -1467,6 +1487,7 @@
                     <td>${inv.invoice_date || '-'}</td>
                     <td>Rp ${parseFloat(inv.total_amount || 0).toLocaleString('id-ID')}</td>
                     <td><span class="badge badge-${status}">${status.toUpperCase()}</span></td>
+                    <td>${status === 'draft' ? `<button class="btn-action btn-success" onclick="confirmInvoice(${inv.id})">✓ Confirm</button>` : ''}</td>
                 </tr>`;
             });
             html += '</tbody></table>';

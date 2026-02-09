@@ -152,15 +152,12 @@ class CommerceService
             $prefix = ($type === 'sales') ? 'INV-SO' : 'INV-PO';
             $invoiceNumber = $prefix . '-' . date('Ymd') . '-' . str_pad($order->id, 4, '0', STR_PAD_LEFT);
 
-            // Calculate tax (default 11% PPN)
-            $taxRate = 0.11;
-            $taxAmount = $order->total_amount * $taxRate;
-
+            // Use exact amount from order without tax modification
             $invoiceData = [
                 'invoice_number' => $invoiceNumber,
                 'invoice_date' => date('Y-m-d'),
-                'total_amount' => $order->total_amount + $taxAmount,
-                'tax_amount' => $taxAmount,
+                'total_amount' => $order->total_amount,
+                'tax_amount' => 0,
                 'notes' => 'Auto-generated from ' . (($type === 'sales') ? 'Sales Order: ' . $order->order_number : 'Purchase Order: ' . $order->order_number)
             ];
 
@@ -188,7 +185,7 @@ class CommerceService
             $invoice->invoice_date = $data['invoice_date'] ?? date('Y-m-d');
             $invoice->total_amount = $data['total_amount'];
             $invoice->tax_amount = $data['tax_amount'] ?? 0;
-            $invoice->status = 'confirmed'; // Auto confirm - tidak draft lagi
+            $invoice->status = 'draft'; // Create as draft, confirm later via invoice confirmation
             $invoice->notes = $data['notes'] ?? '';
 
             if (isset($data['sales_order_id'])) {
@@ -209,6 +206,86 @@ class CommerceService
             return $invoice;
         } catch (Exception $e) {
             error_log('[CommerceService] createInvoice error: ' . $e->getMessage());
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Confirm Invoice dan update related Order + Inventory
+     */
+    public function confirmInvoice($invoiceId)
+    {
+        try {
+            $invoice = Invoice::findFirst($invoiceId);
+            if (!$invoice) {
+                return ['error' => 'Invoice not found'];
+            }
+
+            // Update invoice status
+            $invoice->status = 'confirmed';
+            $invoice->save();
+
+            // If related to Sales Order
+            if ($invoice->sales_order_id) {
+                $order = SalesOrder::findFirst($invoice->sales_order_id);
+                if ($order) {
+                    $order->status = 'confirmed';
+                    $order->save();
+                    
+                    // Deduct inventory for sales order
+                    $items = SalesOrderItem::find(['sales_order_id = ' . $invoice->sales_order_id]);
+                    foreach ($items as $item) {
+                        $product = Product::findFirst($item->product_id);
+                        if ($product) {
+                            $product->quantity_on_hand = (float)$product->quantity_on_hand - (float)$item->quantity;
+                            $product->save();
+                            
+                            // Log movement
+                            $this->logInventoryMovement(
+                                $product->id,
+                                'outgoing',
+                                'sales_order',
+                                $invoice->sales_order_id,
+                                $item->quantity,
+                                'SO confirmed via invoice - stock deducted'
+                            );
+                        }
+                    }
+                }
+            }
+
+            // If related to Purchase Order
+            if ($invoice->purchase_order_id) {
+                $order = PurchaseOrder::findFirst($invoice->purchase_order_id);
+                if ($order) {
+                    $order->status = 'confirmed';
+                    $order->save();
+                    
+                    // Add inventory for purchase order
+                    $items = PurchaseOrderItem::find(['purchase_order_id = ' . $invoice->purchase_order_id]);
+                    foreach ($items as $item) {
+                        $product = Product::findFirst($item->product_id);
+                        if ($product) {
+                            $product->quantity_on_hand = (float)$product->quantity_on_hand + (float)$item->quantity;
+                            $product->save();
+                            
+                            // Log movement
+                            $this->logInventoryMovement(
+                                $product->id,
+                                'incoming',
+                                'purchase_order',
+                                $invoice->purchase_order_id,
+                                $item->quantity,
+                                'PO confirmed via invoice - stock received'
+                            );
+                        }
+                    }
+                }
+            }
+
+            return $invoice;
+        } catch (Exception $e) {
+            error_log('[CommerceService] confirmInvoice error: ' . $e->getMessage());
             return ['error' => $e->getMessage()];
         }
     }

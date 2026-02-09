@@ -1437,6 +1437,36 @@ class ApiController extends Controller
         }
     }
 
+    public function commerceInvoicesConfirmAction($id)
+    {
+        if (!$this->request->isPost()) {
+            return $this->response->setJsonContent(['status' => 'error', 'message' => 'POST required']);
+        }
+
+        try {
+            $this->initCommerceService();
+            $result = $this->commerceService->confirmInvoice($id);
+            
+            if (is_array($result) && isset($result['error'])) {
+                return $this->response->setStatusCode(400)->setJsonContent($result);
+            }
+
+            // Convert object to array if needed
+            $data = is_object($result) ? $result->toArray() : $result;
+
+            return $this->response->setJsonContent([
+                'status' => 'success',
+                'message' => 'Invoice confirmed and related order confirmed with inventory updated',
+                'data' => $data
+            ]);
+        } catch (Exception $e) {
+            return $this->response->setStatusCode(500)->setJsonContent([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     public function commerceInventoryMovementsAction()
     {
         try {
